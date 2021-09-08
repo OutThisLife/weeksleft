@@ -17,7 +17,7 @@ export const Main = styled.main`
   > section {
     display: flex;
     flex-wrap: wrap;
-    gap: max(5px, var(--vsq) / 2);
+    gap: 2px;
     overflow: hidden;
     padding: 0 var(--pad) var(--pad);
     place-content: normal;
@@ -32,9 +32,8 @@ export const Main = styled.main`
           border: 1px solid currentColor;
           display: block;
           flex: auto 0 0;
-          height: max(10px, var(--vsq));
-          width: max(10px, var(--vsq));
-          border-radius: 2px;
+          height: clamp(2px, var(--vsq), 1rem);
+          width: clamp(2px, var(--vsq), 1rem);
         }
 
         &:hover > span {

@@ -3,7 +3,7 @@ import { createGlobalStyle } from 'styled-components'
 export default createGlobalStyle`
 :root {
   --vsq: calc((1vw + 1vh) / 2);
-  --pad: calc(var(--vsq) * 4);
+  --pad: calc(var(--vsq) * 2);
 
   --fg: #000;
   --bg: #fff;

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc && vite build",
     "dev": "vite",
-    "format": "prettier -w {src,types}/**/*.{ts,.tsx} vite.config.ts",
+    "format": "prettier -w src/ vite.config.ts",
     "lint:eslint": "eslint --quiet src/ --ext .ts,.tsx",
     "lint:fix": "eslint --fix src/ --ext .ts,.tsx",
     "lint:types": "tsc --noEmit",
