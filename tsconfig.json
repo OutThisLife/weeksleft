@@ -25,6 +25,7 @@
     "suppressImplicitAnyIndexErrors": true,
     "target": "esnext",
     "types": ["vite/client"],
+    "typeRoots": ["types"],
     "plugins": [
       {
         "name": "typescript-styled-plugin",
@@ -38,6 +39,6 @@
       }
     ]
   },
-  "include": ["src"],
+  "include": ["src", "types"],
   "exclude": ["node_modules", "dist"]
 }

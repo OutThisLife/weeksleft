@@ -64,6 +64,7 @@ const init = (
     'no-return-assign': 0,
     'no-shadow': 1,
     'no-sparse-arrays': 0,
+    'no-void': 0,
     'padding-line-between-statements': [
       1,
       {
