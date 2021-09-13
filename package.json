@@ -15,15 +15,16 @@
     "prebuild": "rm -rf dist"
   },
   "dependencies": {
-    "@react-three/fiber": "^7.0.6",
-    "nice-color-palettes": "^3.0.0",
+    "dat.gui": "^0.7.7",
     "normalize.css": "^8.0.1",
     "react": "^17.0.0",
     "react-dom": "^17.0.0",
     "styled-components": "^5.3.1",
-    "three": "^0.132.2"
+    "three": "^0.132.2",
+    "troika-three-text": "^0.42.0"
   },
   "devDependencies": {
+    "@types/dat.gui": "^0.7.7",
     "@types/eslint": "^7.28.0",
     "@types/node": "^16.7.2",
     "@types/prettier": "^2.3.2",
