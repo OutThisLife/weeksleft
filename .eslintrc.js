@@ -31,7 +31,8 @@ const init = (
         'react/jsx-sort-props': 2,
         'react/no-array-index-key': 0,
         'react/no-danger': 0,
-        'react/react-in-jsx-scope': 0
+        'react/react-in-jsx-scope': 0,
+        'react/require-default-props': 0
       }
     },
     {
@@ -64,6 +65,7 @@ const init = (
     'no-return-assign': 0,
     'no-shadow': 1,
     'no-sparse-arrays': 0,
+    'no-void': 0,
     'padding-line-between-statements': [
       1,
       {
