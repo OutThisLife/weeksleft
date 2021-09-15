@@ -1,36 +1,18 @@
 /* eslint-disable no-nested-ternary */
+import * as dat from 'dat.gui'
 import * as React from 'react'
 import * as THREE from 'three'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
-import { Text } from 'troika-three-text'
+import fontface from 'three/examples/fonts/droid/droid_sans_mono_regular.typeface.json'
 
 const n = 52
 const len = n ** 2
 const r = [...Array(len).keys()]
 
-const state = r.map(i => ({
-  colour: new THREE.Vector4(1, 1, 1, 0.1),
-  pos: new THREE.Vector3(0, 0, 0),
-  scale: new THREE.Vector3(1, 1, 1),
-  text: (() => {
-    const txt = new Text()
-
-    txt.text = `${i}\n5200`
-    txt.fontSize = 0.1
-    txt.textAlign = 'center'
-    txt.anchorX = '50%'
-    txt.color = '#fff'
-    txt.anchorY = '50%'
-    txt.renderOrder = 1
-
-    return txt
-  })()
-}))
-
-const mouse = new THREE.Vector2()
-const picked: Record<string, number | undefined> = {}
+const settings = {
+  color1: '#f36',
+  color2: '#222',
+  weeksLived: 1600
+}
 
 const App: React.FC = () => {
   const ref = React.useRef<HTMLCanvasElement>(null)
@@ -38,130 +20,192 @@ const App: React.FC = () => {
 
   React.useLayoutEffect(() => {
     const scene = new THREE.Scene()
-    const loops: CallableFunction[] = []
+    const mouse = new THREE.Vector2()
+    const font = new THREE.Font(fontface)
+    const gui = new dat.GUI()
+
+    const ticks: Array<(e?: number) => void> = []
+    const mouseTicks: Array<(e: MouseEvent) => void> = []
 
     const renderer = new THREE.WebGL1Renderer({
       antialias: true,
-      canvas: ref.current as HTMLCanvasElement
+      canvas: ref.current as HTMLCanvasElement,
+      powerPreference: 'high-performance'
     })
 
-    renderer.setPixelRatio(window.devicePixelRatio ?? 2)
+    renderer.setPixelRatio(Math.max(window.devicePixelRatio, 2))
 
-    const composer = new EffectComposer(renderer)
-    const camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000)
-    camera.position.z = 30
+    const camera = new THREE.PerspectiveCamera(75, aspect)
+    camera.position.z = 40
 
     const raycaster = new THREE.Raycaster()
 
     // Lights
-    const ambientLight = new THREE.AmbientLight('#fff', 0.7)
-    const pointLight = new THREE.PointLight('#fff', 0.5)
-
-    scene.add(ambientLight)
-    scene.add(pointLight)
-
-    // Postprocessing
     {
-      const renderPass = new RenderPass(scene, camera)
+      const ambientLight = new THREE.AmbientLight('#fff', 1)
 
-      const bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(window.innerWidth, window.innerHeight),
-        1,
-        0.1,
-        0.85
-      )
-
-      composer.addPass(renderPass)
-      composer.addPass(bloomPass)
+      scene.add(ambientLight)
     }
 
     // Meshes
+    const group = new THREE.Group()
+
     {
-      const tmp = new THREE.Object3D()
-      const buf = new THREE.PlaneBufferGeometry(0.5, 0.5)
+      const color1 = gui.addColor(settings, 'color1')
+      const color2 = gui.addColor(settings, 'color2')
+      const weeksLived = gui.add(settings, 'weeksLived', 0, len)
 
-      buf.setAttribute(
-        'color',
-        new THREE.InstancedBufferAttribute(
-          Float32Array.from(r.flatMap(() => [0, 0, 0, 0])),
-          4
-        )
-      )
+      const buf = new THREE.PlaneGeometry(n, n, n - 1, n - 1)
+      const colours = r.map(() => new THREE.Vector4(1, 1, 1, 0.1))
 
-      const mesh = new THREE.InstancedMesh(
-        buf,
-        new THREE.MeshPhongMaterial({
-          transparent: true,
-          vertexColors: true
-        }),
-        len
-      )
+      const getColour = (c: dat.GUIController): THREE.Vector4 => {
+        const { b, g, r } = new THREE.Color(c.getValue())
 
-      const draw = (t?: number) => {
+        return new THREE.Vector4(r, g, b, 1)
+      }
+
+      {
         let i = 0
+
+        for (let x = 0; x < n; x++)
+          for (let y = 0; y < n; y++) {
+            const id = i++
+
+            if (id <= weeksLived.getValue()) {
+              colours[id].copy(getColour(color1))
+            } else {
+              colours[id].copy(getColour(color2))
+            }
+          }
+
+        buf.setAttribute(
+          'color',
+          new THREE.Float32BufferAttribute(
+            colours.flatMap(c => c.toArray()),
+            4
+          )
+        )
+      }
+
+      const mat = new THREE.PointsMaterial({
+        size: 0.6,
+        sizeAttenuation: true,
+        transparent: true,
+        vertexColors: true
+      })
+
+      const points = new THREE.Points(buf, mat)
+
+      if (raycaster.params?.Points) {
+        raycaster.params.Points.threshold = mat.size
+      }
+
+      const draw = () => {
+        let i = 0
+
+        const intersects = raycaster.intersectObject(points)
+        const pickedId = intersects?.[0]?.index
 
         for (let y = n; y > 0; y--)
           for (let x = n; x > 0; x--) {
             const id = i++
 
-            const a = picked.mousedown === id
-            const h = picked.mousemove === id
-
-            const { colour, pos, scale } = state[id]
-
-            pos.set(
-              THREE.MathUtils.lerp(
-                pos.x,
-                a ? 1.2 : 1 - x * 0.75 + 20,
-                a ? 0.05 : 0.1
-              ),
-              -(-y * 0.75 + 20),
-              a ? 0.1 : 0
-            )
-
-            scale.set(
-              THREE.MathUtils.lerp(
-                scale.x,
-                a ? n * 1.499 : h ? 2 : 1,
-                a ? 0.05 : 0.1
-              ),
-              THREE.MathUtils.lerp(scale.y, a ? 3 : h ? 2 : 1, a ? 0.05 : 0.1),
-              THREE.MathUtils.lerp(scale.z, h ? 1.2 : 1, 0.1)
-            )
-
-            tmp.position.copy(pos)
-            tmp.scale.copy(scale)
-
-            if (a) {
-              colour.set(1, 1, 1, 1)
-            } else if (id <= 1600) {
-              colour.set(1, 0.41, 0.7, 1)
-            } else if (h) {
-              colour.set(0.2, 0.2, 0.2, 1)
+            if (pickedId === id) {
+              colours[id].lerp(new THREE.Vector4(0, 0, 0, 1), 0.1)
+            } else if (id <= weeksLived.getValue()) {
+              colours[id].lerp(getColour(color1), 0.1)
             } else {
-              colour.set(
-                0.2,
-                0.2,
-                0.2,
-                THREE.MathUtils.lerp(colour.w, a ? 1 : h ? 0.8 : 0.5, 0.1)
-              )
+              colours[id].lerp(getColour(color2), 0.1)
             }
 
-            mesh.geometry.attributes.color.setXYZW(id, ...colour.toArray())
-            mesh.geometry.attributes.color.needsUpdate = true
-
-            tmp.updateMatrix()
-            mesh.setMatrixAt(id, tmp.matrix)
+            colours[id].toArray(points.geometry.attributes.color.array, id * 4)
           }
 
-        mesh.instanceMatrix.needsUpdate = true
+        points.geometry.attributes.color.needsUpdate = true
       }
 
-      draw()
-
-      scene.add(mesh)
-      loops.unshift(draw)
+      ticks.push(draw)
+      group.add(points)
     }
+
+    {
+      const points = group.children[0] as THREE.Points
+
+      let txt: THREE.Mesh
+
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(1, 1, 1, 1),
+        new THREE.MeshBasicMaterial({
+          opacity: 0,
+          transparent: true
+        })
+      )
+
+      const txtGroup = new THREE.Group()
+
+      const totalText = new THREE.Mesh(
+        new THREE.TextGeometry(`/5200`, {
+          font,
+          height: 0.1,
+          size: 0.5
+        }),
+        new THREE.MeshBasicMaterial()
+      )
+
+      txtGroup.position.set(0.3, -0.3, 0)
+      txtGroup.add(totalText)
+
+      const draw = () => {
+        const intersects = raycaster.intersectObjects(group.children)
+        const pickedId = intersects?.[0]?.index
+
+        if (typeof pickedId === 'number') {
+          const pos = points.geometry.attributes.position
+
+          mesh.position.setY(
+            THREE.MathUtils.lerp(mesh.position.y, pos.getY(pickedId), 0.1)
+          )
+
+          mesh.position.setX(
+            THREE.MathUtils.lerp(mesh.position.x, pos.getX(pickedId), 0.1)
+          )
+
+          const g = new THREE.TextGeometry(`${pickedId}`, {
+            font,
+            height: 0.1,
+            size: 1
+          })
+
+          g.computeBoundingBox()
+
+          totalText.position.set((g.boundingBox?.max.x || 0) + 0.3, 0.3, 0)
+
+          const t = new THREE.Mesh(
+            new THREE.TextGeometry(`${pickedId}`, {
+              font,
+              height: 0.1,
+              size: 1
+            }),
+            new THREE.MeshBasicMaterial()
+          )
+
+          mesh.add(txtGroup)
+          txtGroup.remove(txt)
+          txtGroup.add((txt = t))
+        } else {
+          if (txt) {
+            txtGroup.remove(txt)
+          }
+
+          mesh.remove(txtGroup)
+        }
+      }
+
+      ticks.push(draw)
+      group.add(mesh)
+    }
+
+    scene.add(group)
 
     // Resizing
     const handleResize = () => {
@@ -171,7 +215,6 @@ const App: React.FC = () => {
       camera.updateProjectionMatrix()
 
       renderer.setSize(w, h)
-      composer.setSize(w, h)
     }
 
     handleResize()
@@ -181,19 +224,7 @@ const App: React.FC = () => {
     const handleMouse = (e: MouseEvent) => {
       mouse.x = (e.clientX / window.innerWidth) * 2 - 1
       mouse.y = -((e.clientY / window.innerHeight) * 2 - 1)
-
-      const intersects = raycaster.intersectObjects(
-        scene.children.filter(c => c instanceof THREE.InstancedMesh)
-      )
-
-      if (intersects.length) {
-        picked[e.type] =
-          e.type === 'mousedown' && intersects[0].instanceId === picked[e.type]
-            ? undefined
-            : intersects[0].instanceId
-      } else if (e.type !== 'mousedown') {
-        delete picked[e.type]
-      }
+      mouseTicks.map(f => f(e))
     }
 
     window.addEventListener('mousemove', handleMouse)
@@ -207,11 +238,8 @@ const App: React.FC = () => {
       const delta = clock.getElapsedTime()
 
       raycaster.setFromCamera(mouse, camera)
-      pointLight.position.copy(camera.position)
-
-      loops.forEach(f => f(delta))
-
-      composer.render()
+      ticks.forEach(f => f(delta))
+      renderer.render(scene, camera)
 
       rafId = requestAnimationFrame(loop)
     }
@@ -224,6 +252,8 @@ const App: React.FC = () => {
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('mousemove', handleMouse)
       window.removeEventListener('mousedown', handleMouse)
+
+      gui.destroy()
     }
   }, [])
 
