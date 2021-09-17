@@ -5,7 +5,6 @@ import vertexShader from './vert.vert?raw'
 
 const n = 52
 const len = n ** 2
-const r = [...Array(len).keys()]
 
 const group = new THREE.Group()
 
@@ -15,7 +14,10 @@ const weeksLived = gui.add({ weeksLived: 1600 }, 'weeksLived', 0, len)
 
 const grid = () => {
   const buf = new THREE.PlaneBufferGeometry(n, n, n - 1, n - 1)
-  const colours = r.map(() => new THREE.Vector4(1, 1, 1, 0.1))
+
+  const colours = [...Array(len).keys()].map(
+    () => new THREE.Vector4(1, 1, 1, 0.1)
+  )
 
   const getColour = (c: dat.GUIController): THREE.Vector4 => {
     const { b, g, r } = new THREE.Color(c.getValue())
@@ -167,32 +169,9 @@ const tooltip = () => {
   group.add(mesh)
 }
 
-const simple = () => {
-  const buf = new THREE.PlaneGeometry(n, n, n - 1, n - 1)
-
-  const mat = new THREE.RawShaderMaterial({
-    fragmentShader,
-    uniforms: {
-      size: new THREE.Uniform(20),
-      uResolution: new THREE.Uniform(
-        new THREE.Vector2(window.innerWidth, window.innerHeight)
-      ),
-      uTime: new THREE.Uniform(0)
-    },
-    vertexShader
-  })
-
-  const mesh = new THREE.Mesh(buf, mat)
-
-  ticks.push(e => (mesh.material.uniforms.uTime.value = e))
-
-  group.add(mesh)
-}
-
 export default () => {
-  // simple()
   grid()
-  // tooltip()
+  tooltip()
 
   scene.add(group)
 }
