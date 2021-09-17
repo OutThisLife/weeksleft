@@ -1,5 +1,7 @@
 import * as THREE from 'three'
 import { font, gui, raycaster, scene, ticks } from '../context'
+import fragmentShader from './frag.glsl?raw'
+import vertexShader from './vert.glsl?raw'
 
 const n = 52
 const len = n ** 2
@@ -52,50 +54,17 @@ const grid = () => {
   })
 
   const mat2 = new THREE.RawShaderMaterial({
-    depthTest: true,
-    fragmentShader: `
-precision mediump float;
-
-#define PI 3.14159265359
-#define TWO_PI 6.28318530718
-
-uniform float time;
-varying vec4 vColor;
-varying vec2 vUv;
-
-void main() {
-  vec3 c = vColor.xyz;
-  gl_FragColor = vec4(c, 1.);
-}
-      `,
-    transparent: false,
+    fragmentShader,
     uniforms: {
       size: { value: 20 },
-      time: { value: 1.0 }
+      uResolution: {
+        value: [window.innerWidth, window.innerHeight]
+      },
+      uTime: { value: 1.0 }
     },
     vertexColors: true,
-    vertexShader: `
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
-uniform mat4 modelMatrix;
-attribute vec3 position;
-
-uniform float size;
-
-attribute vec4 color;
-varying vec4 vColor;
-
-attribute vec2 uv;
-varying vec2 vUv;
-
-void main() {
-  vUv = uv;
-  vColor = color;
-
-  gl_PointSize = size;
-  gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
-}
-      `
+    vertexShader,
+    wireframe: true
   })
 
   const points = new THREE.Points(buf, mat2)
@@ -128,7 +97,7 @@ void main() {
       }
 
     points.geometry.attributes.color.needsUpdate = true
-    points.material.uniforms.time.value = e
+    points.material.uniforms.uTime.value = e
   }
 
   ticks.push(draw)
