@@ -11,15 +11,13 @@ attribute vec4 color;
 
 varying vec4 vColor;
 varying vec2 vUv;
-varying vec2 vPos;
 
 void main() {
-  vec4 worldPosition = modelMatrix * vec4(position, 1.0);
 
   gl_PointSize = size;
-  gl_Position = projectionMatrix * viewMatrix * worldPosition;
+  gl_Position =
+      projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
 
   vUv = uv;
-  vPos = gl_Position.xy;
   vColor = color;
 }

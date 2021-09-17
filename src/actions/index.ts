@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { font, gui, raycaster, scene, ticks } from '../context'
-import fragmentShader from './frag.glsl?raw'
-import vertexShader from './vert.glsl?raw'
+import fragmentShader from './frag.frag?raw'
+import vertexShader from './vert.vert?raw'
 
 const n = 52
 const len = n ** 2
@@ -14,7 +14,7 @@ const color2 = gui.addColor({ color2: '#222' }, 'color2')
 const weeksLived = gui.add({ weeksLived: 1600 }, 'weeksLived', 0, len)
 
 const grid = () => {
-  const buf = new THREE.PlaneGeometry(n, n, n - 1, n - 1)
+  const buf = new THREE.PlaneBufferGeometry(n, n, n - 1, n - 1)
   const colours = r.map(() => new THREE.Vector4(1, 1, 1, 0.1))
 
   const getColour = (c: dat.GUIController): THREE.Vector4 => {
@@ -30,47 +30,35 @@ const grid = () => {
       for (let y = 0; y < n; y++) {
         const id = i++
 
-        if (id <= weeksLived.getValue()) {
-          colours[id].copy(getColour(color1))
-        } else {
-          colours[id].copy(getColour(color2))
-        }
+        colours[id].copy(getColour(color1))
       }
 
     buf.setAttribute(
       'color',
       new THREE.Float32BufferAttribute(
-        colours.flatMap(c => c.normalize().toArray()),
+        colours.flatMap(c => c.toArray()),
         4
       )
     )
   }
 
-  const mat = new THREE.PointsMaterial({
-    size: 0.6,
-    sizeAttenuation: true,
-    transparent: true,
-    vertexColors: true
-  })
-
-  const mat2 = new THREE.RawShaderMaterial({
+  const mat = new THREE.RawShaderMaterial({
     fragmentShader,
     uniforms: {
-      size: { value: 20 },
-      uResolution: {
-        value: [window.innerWidth, window.innerHeight]
-      },
-      uTime: { value: 1.0 }
+      size: new THREE.Uniform(n - 10),
+      uResolution: new THREE.Uniform(
+        new THREE.Vector2(window.innerWidth, window.innerHeight)
+      ),
+      uTime: new THREE.Uniform(0)
     },
     vertexColors: true,
-    vertexShader,
-    wireframe: true
+    vertexShader
   })
 
-  const points = new THREE.Points(buf, mat2)
+  const points = new THREE.Points(buf, mat)
 
   if (raycaster.params?.Points) {
-    raycaster.params.Points.threshold = mat.size
+    raycaster.params.Points.threshold = 0.5
   }
 
   const draw = (e?: number) => {
@@ -84,16 +72,14 @@ const grid = () => {
         const id = i++
 
         if (pickedId === id) {
-          colours[id].lerp(new THREE.Vector4(0, 0, 0, 1), 0.1)
+          colours[id].lerp(new THREE.Vector4(1, 0, 0, 1), 0.1)
         } else if (id <= weeksLived.getValue()) {
           colours[id].lerp(getColour(color1), 0.1)
         } else {
           colours[id].lerp(getColour(color2), 0.1)
         }
 
-        colours[id]
-          .normalize()
-          .toArray(points.geometry.attributes.color.array, id * 4)
+        colours[id].toArray(points.geometry.attributes.color.array, id * 4)
       }
 
     points.geometry.attributes.color.needsUpdate = true
@@ -181,7 +167,32 @@ const tooltip = () => {
   group.add(mesh)
 }
 
-grid()
-// tooltip()
+const simple = () => {
+  const buf = new THREE.PlaneGeometry(n, n, n - 1, n - 1)
 
-scene.add(group)
+  const mat = new THREE.RawShaderMaterial({
+    fragmentShader,
+    uniforms: {
+      size: new THREE.Uniform(20),
+      uResolution: new THREE.Uniform(
+        new THREE.Vector2(window.innerWidth, window.innerHeight)
+      ),
+      uTime: new THREE.Uniform(0)
+    },
+    vertexShader
+  })
+
+  const mesh = new THREE.Mesh(buf, mat)
+
+  ticks.push(e => (mesh.material.uniforms.uTime.value = e))
+
+  group.add(mesh)
+}
+
+export default () => {
+  // simple()
+  grid()
+  // tooltip()
+
+  scene.add(group)
+}
