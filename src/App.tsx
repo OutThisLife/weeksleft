@@ -7,20 +7,21 @@ import lights from './lights'
 const App: React.FC = () => {
   const ref = React.useRef<HTMLCanvasElement>(null)
 
-  React.useLayoutEffect(() => {
-    const renderer = new THREE.WebGL1Renderer({
-      antialias: true,
-      canvas: ref.current as HTMLCanvasElement,
-      powerPreference: 'high-performance'
-    })
-
-    actions()
-    lights()
-
-    return bind(renderer)
-  }, [])
+  React.useLayoutEffect(
+    () =>
+      bind(
+        new THREE.WebGL1Renderer({
+          antialias: true,
+          canvas: ref.current as HTMLCanvasElement,
+          powerPreference: 'high-performance'
+        }),
+        lights,
+        actions
+      ),
+    []
+  )
 
   return <canvas {...{ ref }} />
 }
 
-export default App
+export default React.memo(App, () => false)

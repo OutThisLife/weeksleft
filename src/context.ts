@@ -19,7 +19,10 @@ export const camera = new THREE.PerspectiveCamera(
 
 camera.position.z = 40
 
-export const bind = (renderer: THREE.WebGL1Renderer) => {
+export const bind = (
+  renderer: THREE.WebGL1Renderer,
+  ...args: CallableFunction[]
+) => {
   const handleResize = () => {
     const { innerHeight: h, innerWidth: w } = window
 
@@ -38,16 +41,20 @@ export const bind = (renderer: THREE.WebGL1Renderer) => {
     mouseTicks.map(f => f(e))
   }
 
+  handleResize()
+
+  renderer.setAnimationLoop(() => {
+    const t = clock.getElapsedTime()
+
+    raycaster.setFromCamera(mouse, camera)
+    ticks.forEach(f => f(t))
+    renderer.render(scene, camera)
+  })
+
   return (() => {
-    renderer.setAnimationLoop(() => {
-      const t = clock.getElapsedTime()
+    ticks.length = 0
 
-      raycaster.setFromCamera(mouse, camera)
-      ticks.forEach(f => f(t))
-      renderer.render(scene, camera)
-    })
-
-    handleResize()
+    args.forEach(f => f())
 
     window.addEventListener('resize', handleResize)
     window.addEventListener('mousemove', handleMouse)
