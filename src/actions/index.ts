@@ -10,8 +10,6 @@ export default () => {
   const group = new THREE.Group()
 
   const color1 = gui.addColor({ color1: '#f36' }, 'color1')
-  const color2 = gui.addColor({ color2: '#222' }, 'color2')
-  const weeksLived = gui.add({ weeksLived: 1600 }, 'weeksLived', 0, len)
 
   const grid = () => {
     const buf = new THREE.PlaneBufferGeometry(n, n, n - 1, n - 1)
