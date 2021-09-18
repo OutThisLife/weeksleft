@@ -19,6 +19,7 @@ float circle(vec2 p, float radius) { return length(p) - radius; }
 float square(vec2 p, vec2 offset, float s) {
   p.x += offset.x;
   p.y += offset.y;
+
   return max(abs(p.x), abs(p.y)) - s;
 }
 
@@ -49,14 +50,15 @@ void main() {
   vec4 col = vec4(0.);
   vec4 base = vec4(vec3(1., 0.2, 0.4), 1.);
 
+  // st = .5 - fract((st) * -2.);
+
   float r = 0.1;
   float a = step(0., heart(st, vec2(0.), r));
-  float b = step(0., heart(st, vec2(0.), r + 0.005));
+  float b = smoothstep(-0.00001, 0.00001, heart(st, vec2(0.), r + 0.005));
   float c = light(st, vec2(0.2, -0.3), .1);
   c *= light(st, vec2(-0.2, -0.1), .1);
 
-  col = mix(base, vec4(1.) - b, a);
-  col += mix(vec4(.5), vec4(0.), clamp(c, a, 1.));
+  col = mix(base, vec4(1.), a);
 
   for (int i = 0; i < 5; i++) {
     float n = float(i + 1);
@@ -66,6 +68,8 @@ void main() {
 
     col += mix(base, vec4(0.), h);
   }
+
+  col *= mix(vec4(.6), vec4(0.), clamp(c, a, 1.));
 
   gl_FragColor = col;
 }
