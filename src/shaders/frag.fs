@@ -8,11 +8,7 @@ uniform vec2 iMouse;
 #pragma glslify: sqFrame = require('glsl-square-frame')
 // clang-format on
 
-mat2 rotate(float angle) {
-  return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
-}
-
-vec2 makeShape(float a) {
+vec2 pattern(float a) {
   vec2 uv = vec2(0., a);
   uv.y = clamp(uv.y - fract(iTime), -15., 15.);
 
@@ -32,7 +28,7 @@ void main() {
   vec3 c1 = vec3(1., .2, .4);
   vec3 c2 = vec3(.1);
 
-  vec2 heart = makeShape(
+  vec2 heart = pattern(
       length(vec2(st.x, -0.1 - st.y * 1.2 + abs(st.x) * (1. - abs(st.x))) *
              5.) -
       0.1);
