@@ -23,12 +23,15 @@ const App: React.FC = () => {
     []
   )
 
-  useFrame(({ clock, mouse, size }) => {
+  useFrame(({ clock, mouse, size, viewport }) => {
     if (ref.current instanceof THREE.Mesh) {
       const $s = ref.current.material as THREE.RawShaderMaterial
 
       $s.uniforms.iTime.value = clock.getElapsedTime()
-      $s.uniforms.iResolution.value = new THREE.Vector2(size.width, size.height)
+      $s.uniforms.iResolution.value = new THREE.Vector2(
+        size.width * viewport.dpr,
+        size.height * viewport.dpr
+      )
       $s.uniforms.iMouse.value = new THREE.Vector2(mouse.x, mouse.y)
     }
   })
