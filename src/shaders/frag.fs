@@ -1,11 +1,16 @@
 precision mediump float;
 
+#ifdef GL_OES_standard_derivatives
+#extension GL_OES_standard_derivatives : enable
+#endif
+
 uniform float iTime;
 uniform vec2 iResolution;
 uniform vec2 iMouse;
 
 // clang-format off
 #pragma glslify: sqFrame = require('glsl-square-frame')
+#pragma glslify: aastep = require('glsl-aastep')
 // clang-format on
 
 vec2 pattern(float a) {
@@ -36,6 +41,8 @@ void main() {
   col = mix(c1, c2, step(heart.x / 3., heart.y)) + c1;
   col /= atan(dot(st, st), pow(st.y, 2.));
   col = mix(col, c1, fract(0.2 * heart.y));
+
+  col *= aastep(0.2, length(col));
 
   gl_FragColor = vec4(col, 1.);
 }

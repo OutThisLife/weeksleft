@@ -17,6 +17,7 @@
   "dependencies": {
     "@react-three/drei": "^7.8.5",
     "@react-three/fiber": "^7.0.7",
+    "glsl-aastep": "^1.0.1",
     "glsl-camera-ray": "^1.0.0",
     "glsl-easings": "^1.0.0",
     "glsl-noise": "^0.0.0",
