@@ -2,8 +2,8 @@ import { useAspect } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as React from 'react'
 import * as THREE from 'three'
-import fragmentShader from './shaders/fragment.frag?raw'
-import vertexShader from './shaders/vertex.vert?raw'
+import fragmentShader from './shaders/frag.fs'
+import vertexShader from './shaders/vert.vs'
 
 const App: React.FC = () => {
   const ref = React.useRef<THREE.Mesh>()

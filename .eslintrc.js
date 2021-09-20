@@ -10,20 +10,18 @@ const init = (
     {}
 ) => ({
   extends: ['airbnb-typescript-prettier'],
-  ignorePatterns: ['.eslintrc.js'],
+  ignorePatterns: ['.eslintrc.js', 'vite.config.ts'],
   overrides: [
     {
       extends: ['plugin:react-hooks/recommended'],
       files: ['**/*.{ts,tsx}'],
       parser: '@typescript-eslint/parser',
       parserOptions: { project, tsconfigRootDir },
-      plugins: ['better-styled-components'],
       rules: {
         '@typescript-eslint/consistent-type-imports': 1,
         '@typescript-eslint/explicit-module-boundary-types': 0,
         '@typescript-eslint/no-explicit-any': 0,
         '@typescript-eslint/no-shadow': 1,
-        'better-styled-components/sort-declarations-alphabetically': 2,
         'no-shadow': 0,
         'react-hooks/exhaustive-deps': 0,
         'react-hooks/rules-of-hooks': 2,
