@@ -7,7 +7,6 @@ import vertexShader from './shaders/vert.vs'
 
 const App: React.FC = () => {
   const ref = React.useRef<THREE.Mesh>()
-
   const scale = useAspect(1024, 768)
 
   const data = React.useMemo(
@@ -28,11 +27,12 @@ const App: React.FC = () => {
       const $s = ref.current.material as THREE.RawShaderMaterial
 
       $s.uniforms.iTime.value = clock.getElapsedTime()
+      $s.uniforms.iMouse.value = new THREE.Vector2(mouse.x, mouse.y)
+
       $s.uniforms.iResolution.value = new THREE.Vector2(
         size.width * viewport.dpr,
         size.height * viewport.dpr
       )
-      $s.uniforms.iMouse.value = new THREE.Vector2(mouse.x, mouse.y)
     }
   })
 

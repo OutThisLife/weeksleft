@@ -1,22 +1,29 @@
 precision mediump float;
 
-varying vec2 vUv;
 uniform float iTime;
 uniform vec2 iResolution;
 uniform vec2 iMouse;
 
 // clang-format off
 #pragma glslify: sqFrame = require('glsl-square-frame')
-#pragma glslify: ease = require(glsl-easings/cubic-in-out)
 // clang-format on
 
 mat2 rotate(float angle) {
   return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
 }
 
+vec2 makeShape(float a) {
+  vec2 uv = vec2(0., a);
+  uv.y = clamp(uv.y - fract(iTime), -15., 15.);
+
+  vec2 pos = uv - floor(uv);
+  return vec2(a, length(pos));
+}
+
 void main() {
   vec2 st = sqFrame(iResolution);
-  float t = ease(abs(sin(iTime)));
+  float ms = iTime;
+  float t = abs(sin(ms));
 
   vec2 mt = iMouse.xy;
   float m = length(mt - st);
@@ -25,22 +32,14 @@ void main() {
   vec3 c1 = vec3(1., .2, .4);
   vec3 c2 = vec3(.1);
 
-  float c =
+  vec2 heart = makeShape(
       length(vec2(st.x, -0.1 - st.y * 1.2 + abs(st.x) * (1. - abs(st.x))) *
              5.) -
-      0.1;
+      0.1);
 
-  vec2 uv = vec2(0., c);
-  uv.y -= (iTime * 1.);
-
-  vec2 pos = uv - floor(uv);
-  vec2 rot = pos * rotate(m);
-  float len = length(pos);
-
-  col = mix(c1, c2, step(c / 3., len)) + c1;
+  col = mix(c1, c2, step(heart.x / 3., heart.y)) + c1;
   col /= atan(dot(st, st), pow(st.y, 2.));
-  col = mix(col, c1, fract(0.2 * len));
-  col += (c2 / c1) * (0.8 * (0.33 * distance(st.y, pow(rot.y, 2.))));
+  col = mix(col, c1, fract(0.2 * heart.y));
 
   gl_FragColor = vec4(col, 1.);
 }
