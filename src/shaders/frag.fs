@@ -44,7 +44,6 @@ vec2 map(vec3 p) {
   float c = sdSphere(p, 1.05);
 
   res = opU(res, vec2(unionSDF(intersectSDF(b, a), c), 1.));
-  res = opU(res, vec2(sdCube(p - vec3(2., 2., -2.), vec3(.5)), 1.));
 
   return res;
 }
