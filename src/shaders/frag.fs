@@ -20,61 +20,122 @@ const float maxDepth = 100.;
 
 // ----------------------------------------------------------------------
 
-vec2 opU(vec2 d1, vec2 d2) { return (d1.x < d2.x) ? d1 : d2; }
+vec3 opRep(vec3 p, float s) { return mod(p + s * 0.5, s) - s * 0.5; }
 
-float intersectSDF(float d1, float d2) { return max(d1, d2); }
+float opUnion(float d1, float d2) { return min(d1, d2); }
 
-float unionSDF(float d1, float d2) { return min(d1, d2); }
+float opSubtraction(float d1, float d2) { return max(-d1, d2); }
 
-float differenceSDF(float d1, float d2) { return max(d1, -d2); }
+float opIntersection(float d1, float d2) { return max(d1, d2); }
+
+float opSmoothUnion(float d1, float d2, float k) {
+  float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
+  return mix(d2, d1, h) - k * h * (1.0 - h);
+}
+
+float opSmoothSubtraction(float d1, float d2, float k) {
+  float h = clamp(0.5 - 0.5 * (d2 + d1) / k, 0.0, 1.0);
+  return mix(d2, -d1, h) + k * h * (1.0 - h);
+}
+
+float opSmoothIntersection(float d1, float d2, float k) {
+  float h = clamp(0.5 - 0.5 * (d2 - d1) / k, 0.0, 1.0);
+  return mix(d2, d1, h) + k * h * (1.0 - h);
+}
+
+float onion(float d, float r) { return abs(d) - r; }
 
 float sdSphere(vec3 p, float r) { return length(p) - r; }
 
-float sdCube(vec3 p, vec3 r) {
-  vec3 d = abs(p) - r;
-  return min(max(d.x, max(d.y, d.z)), 0.) + length(max(d, 0.));
+float sdCube(vec3 p, vec3 b, float r) {
+  vec3 d = abs(p) - b;
+  return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0)) - r;
 }
 
-vec2 map(vec3 p) {
-  vec2 res = vec2(1e10, 0.);
+float sdOctahedron(vec3 p, float s) {
+  p = abs(p);
+  float m = p.x + p.y + p.z - s;
+  vec3 q;
+  if (3.0 * p.x < m)
+    q = p.xyz;
+  else if (3.0 * p.y < m)
+    q = p.yzx;
+  else if (3.0 * p.z < m)
+    q = p.zxy;
+  else
+    return m * 0.57735027;
 
-  float s = 0.923;
-  float a = sdSphere(p / s, 1.3) * s;
-  float b = sdCube(p / s, vec3(1.1)) * s;
-  float c = sdSphere(p, 1.05);
+  float k = clamp(0.5 * (q.z - q.y + s), 0.0, s);
+  return length(vec3(q.x, q.y - s + k, q.z - k));
+}
 
-  res = opU(res, vec2(unionSDF(intersectSDF(b, a), c), 1.));
+float map(vec3 p) {
+  float d = 1e10;
+  float an = sin(iTime);
 
-  return res;
+  {
+    vec3 q = p - vec3(1.2, -2., -1.3);
+
+    float d1 = sdSphere(q - vec3(0., .5 + .3 * an, 0.), .55);
+    float d2 = sdCube(q, vec3(0.6, 0.2, 0.6), 0.2);
+
+    float dt = opSmoothUnion(d1, d2, .25);
+
+    d = min(d, dt);
+  }
+
+  {
+    vec3 q = p - vec3(-1.2, -2., -1.3);
+
+    float d1 = sdSphere(q - vec3(0., .5, .2), .3 + .3 * an) - 0.12;
+    float d2 = sdCube(q, vec3(0.6, .2, .2), .4);
+
+    float dt = opSmoothSubtraction(d1, d2, .25);
+
+    d = min(d, dt);
+  }
+
+  return d;
 }
 
 vec3 calcNormal(vec3 p) {
   const vec3 st = vec3(.001, 0., 0.);
 
-  float x = map(p + st.xyy).x - map(p - st.xyy).x;
-  float y = map(p + st.yxy).x - map(p - st.yxy).x;
-  float z = map(p + st.yyx).x - map(p - st.yyx).x;
+  float x = map(p + st.xyy) - map(p - st.xyy);
+  float y = map(p + st.yxy) - map(p - st.yxy);
+  float z = map(p + st.yyx) - map(p - st.yyx);
 
   return normalize(vec3(x, y, z));
 }
 
+float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
+  float res = 1.0;
+  float t = tmin;
+
+  for (int i = 0; i < 50; i++) {
+    float h = map(ro + rd * t);
+    res = min(res, k * h / t);
+    t += clamp(h, 0.02, 0.20);
+
+    if (res < 0.005 || t > tmax) {
+      break;
+    }
+  }
+
+  return clamp(res, 0.0, 1.0);
+}
+
 vec3 material(vec3 p, vec3 ro, vec3 rd) {
-  vec3 col;
+  vec3 nor = calcNormal(p);
+  vec3 lig = normalize(vec3(1.0, 0.8, -0.));
 
-  vec3 N = calcNormal(p);
-  vec3 V = normalize(ro - p);
+  float dif = clamp(dot(nor, lig), 0., 1.);
+  float amb = .5 + 1. * nor.y;
+  float sha = calcSoftshadow(pos, lig, 0.001, 1.0, 32.0);
 
-  vec3 light = normalize(vec3(-.5, .4, -.6));
-  vec3 L = normalize(p);
+  vec3 prim = #f36;
 
-  vec3 R = normalize(reflect(-L, N));
-
-  float dotLN = max(0., dot(L, N));
-  float dotRV = max(0., dot(R, V));
-
-  col += (#f36 * dotLN) + (#f36 * pow(dotRV, 20.));
-
-  return col;
+  return prim * amb + prim * dif * sha;
 }
 
 mat4 viewMatrix(vec3 eye, vec3 center, vec3 up) {
@@ -89,7 +150,7 @@ vec3 render(vec3 ro, vec3 rd) {
   mat4 view = viewMatrix(ro, vec3(0.), vec3(0., 1., 0.));
   vec3 st = (view * vec4(rd, 0.)).xyz;
 
-  vec3 col = vignetteBackground(sqFrame(iResolution), 1.);
+  vec3 col = vec3(0.);
 
   float depth = 0.;
   for (int i = 0; i < steps; ++i) {
@@ -98,17 +159,16 @@ vec3 render(vec3 ro, vec3 rd) {
     }
 
     vec3 p = ro + depth * st;
-
-    float dist = map(p).x;
+    float dist = map(p);
 
     if (dist < minDepth) {
-      col = material(p, ro, rd);
+      col = sqrt(material(p, ro, rd));
     }
 
     depth += dist;
   }
 
-  return vec3(clamp(col, 0., 1.));
+  return col;
 }
 
 vec3 rayDirection(float fov, vec2 p) {
@@ -120,13 +180,11 @@ vec3 rayDirection(float fov, vec2 p) {
 void main() {
   vec2 st = sqFrame(iResolution);
 
-  vec3 ro = vec3(8., 5., 7.0);
+  vec3 ro = vec3(0., 5., 5.0);
   vec3 rd = rayDirection(75., st);
 
-  vec3 col;
-
-  col = render(ro, rd);
-  col = pow(col, vec3(0.4545));
+  vec3 col = render(ro, rd);
+  col = pow(col, vec3(.7));
 
   fragColor = vec4(col, 1.);
 }
