@@ -6,9 +6,12 @@ import { render } from 'react-dom'
 import App from './app'
 import './index.css'
 
+console.clear()
+
 render(
   <React.StrictMode>
-    <Canvas camera={{ fov: 75, position: [0, 0, 1] }}>
+    <Canvas mode="concurrent">
+      <color args={['#222']} attach="background" />
       <Stats />
       <App />
     </Canvas>

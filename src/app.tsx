@@ -40,7 +40,7 @@ const App: React.FC = () => {
     <React.Suspense key={Math.random()} fallback={null}>
       <mesh {...{ ref, scale }}>
         <planeBufferGeometry args={[1, 1]} />
-        <rawShaderMaterial transparent {...data} />
+        <rawShaderMaterial transparent version={300} {...data} />
       </mesh>
     </React.Suspense>
   )

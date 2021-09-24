@@ -1749,6 +1749,11 @@ glsl-aastep@^1.0.1:
   resolved "https://registry.yarnpkg.com/glsl-aastep/-/glsl-aastep-1.0.1.tgz#eeaf16961e472c9b8b3d965d080ab8ec1d4c6bb8"
   integrity sha1-7q8Wlh5HLJuLPZZdCAq47B1Ma7g=
 
+glsl-blend-overlay@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/glsl-blend-overlay/-/glsl-blend-overlay-1.0.5.tgz#2265d5fd34b7c6fbea2c3c527a6a2578f53dab26"
+  integrity sha1-ImXV/TS3xvvqLDxSemolePU9qyY=
+
 glsl-camera-ray@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/glsl-camera-ray/-/glsl-camera-ray-1.0.0.tgz#e5adfe123c02bc818c7ddb3e409c273817a955ed"
@@ -1780,12 +1785,17 @@ glsl-noise@^0.0.0:
   resolved "https://registry.yarnpkg.com/glsl-noise/-/glsl-noise-0.0.0.tgz#367745f3a33382c0eeec4cb54b7e99cfc1d7670b"
   integrity sha1-NndF86MzgsDu7Ey1S36Zz8HXZws=
 
+glsl-random@^0.0.5:
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/glsl-random/-/glsl-random-0.0.5.tgz#bd00c8c1ab1f5587e5fe2d48e83c50c5b9798b5b"
+  integrity sha1-vQDIwasfVYfl/i1I6DxQxbl5i1s=
+
 glsl-raytrace@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/glsl-raytrace/-/glsl-raytrace-1.0.0.tgz#5fd022180a36d69522e2644d300ff20966b078de"
   integrity sha1-X9AiGAo21pUi4mRNMA/yCWaweN4=
 
-glsl-resolve@0.0.1:
+glsl-resolve@0.0.1, glsl-resolve@^0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/glsl-resolve/-/glsl-resolve-0.0.1.tgz#894bef73910d792c81b5143180035d0a78af76d3"
   integrity sha1-iUvvc5ENeSyBtRQxgANdCnivdtM=
@@ -1870,7 +1880,7 @@ glsl-token-whitespace-trim@^1.0.0:
   resolved "https://registry.yarnpkg.com/glsl-token-whitespace-trim/-/glsl-token-whitespace-trim-1.0.0.tgz#46d1dfe98c75bd7d504c05d7d11b1b3e9cc93b10"
   integrity sha1-RtHf6Yx1vX1QTAXX0RsbPpzJOxA=
 
-glsl-tokenizer@^2.0.0, glsl-tokenizer@^2.0.2:
+glsl-tokenizer@^2.0.0, glsl-tokenizer@^2.0.2, glsl-tokenizer@^2.1.5:
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/glsl-tokenizer/-/glsl-tokenizer-2.1.5.tgz#1c2e78c16589933c274ba278d0a63b370c5fee1a"
   integrity sha512-XSZEJ/i4dmz3Pmbnpsy3cKh7cotvFlBiZnDOwnj/05EwNp2XrhQ4XKJxT7/pDt4kp4YcpRSKz8eTV7S+mwV6MA==
@@ -1914,6 +1924,20 @@ glslify-deps@^1.2.5:
     inherits "^2.0.1"
     map-limit "0.0.1"
     resolve "^1.0.0"
+
+glslify-hex@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/glslify-hex/-/glslify-hex-2.1.1.tgz#f98471fdbde958dc684f7c056fb2e0744c10f6bd"
+  integrity sha1-+YRx/b3pWNxoT3wFb7LgdEwQ9r0=
+
+glslify-import@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/glslify-import/-/glslify-import-3.1.0.tgz#3dc745a667bb80e14aaba2f4c9294463f96ab18c"
+  integrity sha512-3n7gI7mDcpkpGMFrbCEFhbyUU70sNrih5OrU6oN6EcgTsTVjrbHpQVjjG78Ta2kzZGEqQX0OD2BgFgglm2DZPg==
+  dependencies:
+    glsl-resolve "0.0.1"
+    glsl-token-string "^1.0.1"
+    glsl-tokenizer "^2.0.2"
 
 glslify@^7.1.1:
   version "7.1.1"
