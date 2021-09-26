@@ -1,3 +1,28 @@
+// https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
+
+vec3 opRep(vec3 p, float s) { return mod(p + s * 0.5, s) - s * 0.5; }
+
+float opUnion(float d1, float d2) { return min(d1, d2); }
+
+float opSubtraction(float d1, float d2) { return max(-d1, d2); }
+
+float opIntersection(float d1, float d2) { return max(d1, d2); }
+
+float opSmoothUnion(float d1, float d2, float k) {
+  float h = clamp(.5 + .5 * (d2 - d1) / k, 0., 1.);
+  return mix(d2, d1, h) - k * h * (1. - h);
+}
+
+float opSmoothSubtraction(float d1, float d2, float k) {
+  float h = clamp(.5 - .5 * (d2 + d1) / k, 0., 1.);
+  return mix(d2, -d1, h) + k * h * (1. - h);
+}
+
+float opSmoothIntersection(float d1, float d2, float k) {
+  float h = clamp(.5 - .5 * (d2 - d1) / k, 0., 1.);
+  return mix(d2, d1, h) + k * h * (1. - h);
+}
+
 float sdHeart(vec2 p, float s) {
   return length(pow(dot(p, p) - s, 3.) - pow(p.x, 2.) * pow(p.y, 3.));
 }

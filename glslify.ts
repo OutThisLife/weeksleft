@@ -83,7 +83,7 @@ export default () => ({
 
     return {
       code: `export default ${JSON.stringify(
-        compile(code, {
+        compile(code.replace(/^#version 330/, '#version 300 es'), {
           basedir: dirname(id.split('?').shift()),
           transform: [glslifyImport, 'glslify-hex']
         })

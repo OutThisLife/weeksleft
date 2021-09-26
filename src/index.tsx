@@ -6,14 +6,16 @@ import { render } from 'react-dom'
 import App from './app'
 import './index.css'
 
-console.clear()
-
 render(
   <React.StrictMode>
-    <Canvas mode="concurrent">
+    <Canvas camera={{ position: [0, 0, 1] }} linear mode="concurrent">
+      <React.Suspense key={Math.random()} fallback={null}>
+        <Stats />
+
+        <App />
+      </React.Suspense>
+
       <color args={['#222']} attach="background" />
-      <Stats />
-      <App />
     </Canvas>
   </React.StrictMode>,
   document.getElementById('root')

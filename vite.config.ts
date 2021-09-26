@@ -8,6 +8,6 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, 'dist')
   },
-  plugins: [reactRefreshPlugin(), glslify()],
+  plugins: [glslify(), reactRefreshPlugin()],
   root: resolve(__dirname, 'src')
 })
