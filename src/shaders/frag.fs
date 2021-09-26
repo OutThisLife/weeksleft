@@ -95,6 +95,27 @@ float fbm(in vec2 st, int o) {
 }
 
 /**
+ * Vanity
+ */
+vec3 blendOverlay(vec3 base, vec3 blend) {
+  return mix(1.0 - 2.0 * (1.0 - base) * (1.0 - blend), 2.0 * base * blend,
+             step(base, vec3(0.5)));
+}
+
+vec3 vignette(vec2 p, float radius) {
+  p /= radius;
+  p -= vec2(-0.1, -0.1);
+
+  float dist = length(p);
+  dist = smoothstep(-.33, .99, 1. - dist);
+
+  vec3 col = mix(vec3(0.33), vec3(1.), dist);
+  vec3 noise = vec3(random(p * 1.5), random(p * 2.5), random(p));
+
+  return mix(col, blendOverlay(col, noise), 0.025);
+}
+
+/**
  * Vector transformations
  */
 mat2 rotate(float angle) {
@@ -107,7 +128,7 @@ mat2 scale(vec2 scale) { return mat2(scale.x, 0., 0., scale.y); }
  * Materials, lighting, et al
  */
 vec3 calcNormal(vec3 p) {
-  const vec3 st = vec3(.001, 0., 0.);
+  const vec3 st = vec3(.01, 0., 0.);
 
   float x = map(p + st.xyy) - map(p - st.xyy);
   float y = map(p + st.yxy) - map(p - st.yxy);
@@ -148,7 +169,7 @@ float map(vec3 p) {
   float an = sin(iTime);
 
   {
-    float dt = sdCube(p, vec3(1.), .1);
+    float dt = sdSphere(p, 0.1);
 
     d = min(d, dt);
   }
@@ -158,29 +179,25 @@ float map(vec3 p) {
 
 vec3 material(vec3 p, vec3 ro, vec3 rd) {
   vec3 nor = calcNormal(p);
-  vec3 lig = normalize(vec3(1.0, 0.8, -0.));
+  vec3 lig = normalize(vUv);
 
   float dif = clamp(dot(nor, lig), 0., 1.);
-  float amb = .5 + 1. * nor.y;
-  float sha = calcSoftshadow(vUv, lig, 0.01, 1., 32.0);
+  float amb = .5 + .5 * nor.y;
+  float sha = calcSoftshadow(vViewPos, lig, 0.01, 1., 32.0);
 
-  return primary * amb + primary * dif * sha;
+  return primary * amb + primary * dif + primary * sha;
 }
 
 vec4 render(vec3 ro, vec3 rd) {
   const int steps = 255;
-  const float minDepth = 0.01;
+  const float minDepth = 0.001;
   const float maxDepth = 100.;
 
-  vec4 col = vec4(0.);
+  vec4 col = vec4(vignette(rd.xy, 1.), 4.);
 
   float depth = 0.;
-  for (int i = 0; i < steps; ++i) {
-    if (depth > maxDepth) {
-      break;
-    }
-
-    vec3 p = ro + rd * depth;
+  for (int i = 0; i < steps && depth < maxDepth; ++i) {
+    vec3 p = ro * depth + rd;
     float dist = map(p);
 
     if (dist < minDepth) {
@@ -193,17 +210,25 @@ vec4 render(vec3 ro, vec3 rd) {
   return pow(col, vec4(.7));
 }
 
-mat4 getCamera(vec3 eye, vec3 center, vec3 up) {
-  vec3 f = normalize(center - eye);
-  vec3 s = normalize(cross(f, up));
-  vec3 u = cross(s, f);
+vec3 rayDirection(float fov, vec2 p) {
+  vec2 xy = p;
+  float z = tan(radians(fov));
+  return normalize(vec3(xy, -z));
+}
 
-  return mat4(vec4(s, 0.), vec4(u, 0.), vec4(-f, 0.), vec4(0., 0., 0., 1.));
+vec2 sqFrame(vec2 st) {
+  vec2 p = 2. * (gl_FragCoord.xy / st.xy) - 1.;
+
+  p.x *= st.x / st.y;
+
+  return p;
 }
 
 void main() {
-  vec3 ro = normalize(cameraPosition);
-  vec3 rd = normalize(vViewPos - ro);
+  vec2 st = sqFrame(iResolution);
+
+  vec3 ro = normalize(vec3(0., 0., 1.));
+  vec3 rd = rayDirection(75., st);
 
   fragColor = render(ro, rd);
 }

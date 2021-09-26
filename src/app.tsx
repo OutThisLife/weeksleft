@@ -1,4 +1,3 @@
-import { OrbitControls, OrthographicCamera } from '@react-three/drei'
 import type { ShaderMaterialProps } from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
 import * as React from 'react'
@@ -8,7 +7,6 @@ import vertexShader from './shaders/vert.vs'
 
 const App: React.FC = () => {
   const ref = React.useRef<any>()
-  const myCamera = React.useRef<any>()
 
   const data = React.useMemo<ShaderMaterialProps>(
     () => ({
@@ -47,15 +45,12 @@ const App: React.FC = () => {
   })
 
   return (
-    <>
-      <OrthographicCamera ref={myCamera} position={[0, 0, 5]} />
-      <OrbitControls camera={myCamera.current} enableDamping />
-
-      <mesh frustumCulled={false} {...{ ref }}>
+    <React.Suspense key={Math.random()} fallback={null}>
+      <mesh {...{ ref }}>
         <planeBufferGeometry args={[2, 2]} />
         <rawShaderMaterial {...data} />
       </mesh>
-    </>
+    </React.Suspense>
   )
 }
 

@@ -8,14 +8,9 @@ import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas camera={{ position: [0, 0, 1] }} linear mode="concurrent">
-      <React.Suspense key={Math.random()} fallback={null}>
-        <Stats />
-
-        <App />
-      </React.Suspense>
-
-      <color args={['#222']} attach="background" />
+    <Canvas camera={{ position: [0, 0, 1] }} mode="concurrent">
+      <Stats />
+      <App />
     </Canvas>
   </React.StrictMode>,
   document.getElementById('root')
