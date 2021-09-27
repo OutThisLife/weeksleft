@@ -15,19 +15,25 @@ const glslifyImport = (file, src, opts, done) => {
       return k
     }
 
-    const [, str] = /#pragma glslify:\s*import\(([^\)]+)\)/.exec(k.data) ?? []
+    const [, ...matches] =
+      /#pragma glslify:\s?import\s(\{.*\})?.*?(['".\/A-z]+)$/gm.exec(k.data) ??
+      []
 
-    if (!str) {
+    if (!matches.length) {
       return k
     }
 
     try {
       total++
 
-      const v = str.trim().replace(/^'|'$/g, '').replace(/^"|"$/g, '')
+      const modules = matches.find(v => v?.includes('{'))
+      const file = matches
+        .find(v => v?.includes('.'))
+        .split(/'|"/)
+        .join('')
 
       if (typeof done === 'function') {
-        const resolved = glResolve.sync(v, { basedir })
+        const resolved = glResolve.sync(file, { basedir })
 
         glslifyImport(
           resolved,
@@ -50,14 +56,31 @@ const glslifyImport = (file, src, opts, done) => {
       } else {
         total--
 
-        const resolved = glResolve.sync(v, { basedir })
-
-        k.data = glslifyImport(
+        const resolved = glResolve.sync(file, { basedir })
+        let contents = glslifyImport(
           resolved,
           readFileSync(resolved, 'utf8'),
           opts,
           null
         )
+
+        k.data = contents
+
+        if (modules) {
+          k.contents = modules
+            .trim()
+            .replace(/(^{\s?|\s}$)/g, '')
+            .split(',')
+            .reduce((acc, m) => {
+              const rgx = new RegExp(`(.*(?<=${m})[\\s\\S]*?\})`, 'gm')
+
+              const [, func] = rgx.exec(contents) ?? []
+              acc.push(func)
+              return acc
+            }, [])
+            .filter(v => v)
+            .join('\n')
+        }
       }
     } catch (err) {
       if (typeof done === 'function') {

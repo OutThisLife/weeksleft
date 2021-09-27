@@ -1,51 +1,10 @@
-/**
- * SDFs & utils
- */
-
-vec3 opRep(vec3 p, float s) { return mod(p + s * 0.5, s) - s * 0.5; }
-
-float opUnion(float d1, float d2) { return min(d1, d2); }
-
-float opSubtraction(float d1, float d2) { return max(-d1, d2); }
-
-float opIntersection(float d1, float d2) { return max(d1, d2); }
-
-float opSmoothUnion(float d1, float d2, float k) {
-  float h = clamp(.5 + .5 * (d2 - d1) / k, 0., 1.);
-  return mix(d2, d1, h) - k * h * (1. - h);
-}
-
-float opSmoothSubtraction(float d1, float d2, float k) {
-  float h = clamp(.5 - .5 * (d2 + d1) / k, 0., 1.);
-  return mix(d2, -d1, h) + k * h * (1. - h);
-}
-
-float opSmoothIntersection(float d1, float d2, float k) {
-  float h = clamp(.5 - .5 * (d2 - d1) / k, 0., 1.);
-  return mix(d2, d1, h) + k * h * (1. - h);
-}
-
-// The primitives
-
-float sdHeart(vec2 p, float s) {
-  return length(pow(dot(p, p) - s, 3.) - pow(p.x, 2.) * pow(p.y, 3.));
-}
-
-float sdSphere(vec3 p, float r) { return length(p) - r; }
-
-float sdCube(vec3 p, vec3 b, float r) {
-  vec3 d = abs(p) - b;
-  return min(max(d.x, max(d.y, d.z)), 0.) + length(max(d, 0.)) - r;
-}
-
-/**
- * Utils
- */
-
 float dot2(in vec2 v) { return dot(v, v); }
 float dot2(in vec3 v) { return dot(v, v); }
 float ndot(in vec2 a, in vec2 b) { return a.x * b.x - a.y * b.y; }
 
+/**
+ * Setup utils
+ */
 vec2 sqFrame(vec2 st) {
   vec2 p = 2. * (gl_FragCoord.xy / st.xy) - 1.;
 
@@ -111,27 +70,6 @@ float fbm(in vec2 st, int o) {
 }
 
 /**
- * Vanity
- */
-vec3 blendOverlay(vec3 base, vec3 blend) {
-  return mix(1.0 - 2.0 * (1.0 - base) * (1.0 - blend), 2.0 * base * blend,
-             step(base, vec3(0.5)));
-}
-
-vec3 vignette(vec2 p, float radius) {
-  p /= radius;
-  p -= vec2(-0.1, -0.1);
-
-  float dist = length(p);
-  dist = smoothstep(-.33, .99, 1. - dist);
-
-  vec3 col = mix(vec3(0.33), vec3(1.), dist);
-  vec3 noise = vec3(random(p * 1.5), random(p * 2.5), random(p));
-
-  return mix(col, blendOverlay(col, noise), 0.025);
-}
-
-/**
  * Vector transformations
  */
 mat2 rotate(float angle) {
@@ -139,39 +77,3 @@ mat2 rotate(float angle) {
 }
 
 mat2 scale(vec2 scale) { return mat2(scale.x, 0., 0., scale.y); }
-
-/**
- * Materials, lighting, et al
- */
-vec3 calcNormal(vec3 p) {
-  const vec3 st = vec3(.001, 0., 0.);
-
-  float x = map(p + st.xyy) - map(p - st.xyy);
-  float y = map(p + st.yxy) - map(p - st.yxy);
-  float z = map(p + st.yyx) - map(p - st.yyx);
-
-  return normalize(vec3(x, y, z));
-}
-
-float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
-  float res = 1.;
-  float t = tmin;
-
-  for (int i = 0; i < 50; i++) {
-    float h = map(ro + rd * t);
-    res = min(res, k * h / t);
-    t += clamp(h, 0.2, 0.20);
-
-    if (res < 0.5 || t > tmax) {
-      break;
-    }
-  }
-
-  return clamp(res, 0., 1.);
-}
-
-vec3 faceNormals(vec3 pos) {
-  vec3 fdx = dFdx(pos);
-  vec3 fdy = dFdy(pos);
-  return normalize(cross(fdx, fdy));
-}

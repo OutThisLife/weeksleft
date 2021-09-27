@@ -29,9 +29,14 @@ float sdHeart(vec2 p, float s) {
 
 float sdSphere(vec3 p, float r) { return length(p) - r; }
 
-float sdCube(vec3 p, vec3 b, float r) {
+float sdBox(vec3 p, vec3 b, float r) {
   vec3 d = abs(p) - b;
   return min(max(d.x, max(d.y, d.z)), 0.) + length(max(d, 0.)) - r;
+}
+
+float sdCone(vec3 p, vec2 c) {
+  float q = length(p.xy);
+  return dot(c, vec2(q, p.z));
 }
 
 float sdOctahedron(vec3 p, float s) {
@@ -49,4 +54,37 @@ float sdOctahedron(vec3 p, float s) {
 
   float k = clamp(.5 * (q.z - q.y + s), 0., s);
   return length(vec3(q.x, q.y - s + k, q.z - k));
+}
+
+float lineSegment(in vec2 p, vec2 a, vec2 b) {
+  vec2 pa = p - a, ba = b - a;
+  float h = clamp(dot(pa, ba) / dot(ba, ba), 0., 1.);
+  return length(pa - ba * h);
+}
+
+/**
+ * Materials, lighting, et al
+ */
+
+float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
+  float res = 1.;
+  float t = tmin;
+
+  for (int i = 0; i < 50; i++) {
+    float h = map(ro + rd * t);
+    res = min(res, k * h / t);
+    t += clamp(h, 0.2, 0.20);
+
+    if (res < 0.5 || t > tmax) {
+      break;
+    }
+  }
+
+  return clamp(res, 0., 1.);
+}
+
+vec3 faceNormals(vec3 pos) {
+  vec3 fdx = dFdx(pos);
+  vec3 fdy = dFdy(pos);
+  return normalize(cross(fdx, fdy));
 }

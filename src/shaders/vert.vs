@@ -7,19 +7,21 @@ uniform mat4 normalMatrix;
 uniform vec3 cameraPosition;
 uniform mat4 projectionMatrix;
 
-in vec3 pos;
+in vec3 position;
 in vec3 normal;
 in vec3 uv;
 
 out vec3 vUv;
-out vec3 vViewPos;
+out vec3 vPos;
+out vec3 vNormal;
 
 void main() {
-  vec4 mpos = modelViewMatrix * vec4(pos, 1.);
-  vec4 viewPos = projectionMatrix * mpos;
+  vec4 pos = vec4(position, 1.);
+  vec4 cpt = projectionMatrix * modelViewMatrix * pos;
 
   vUv = uv;
-  vViewPos = viewPos.xyz;
+  vPos = cpt.xyz;
+  vNormal = (normalMatrix * vec4(normal, 1.)).xyz;
 
-  gl_Position = viewPos;
+  gl_Position = pos;
 }
