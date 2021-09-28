@@ -1,6 +1,8 @@
 // https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
 
+vec4 opU(vec4 d1, vec4 d2) { return (d1.x < d2.x) ? d1 : d2; }
 vec2 opU(vec2 d1, vec2 d2) { return (d1.x < d2.x) ? d1 : d2; }
+
 vec3 opRep(vec3 p, float s) { return mod(p + s * .5, s) - s * .5; }
 
 float opUnion(float d1, float d2) { return min(d1, d2); }
@@ -24,6 +26,11 @@ float opSmoothIntersection(float d1, float d2, float k) {
   return mix(d2, d1, h) + k * h * (1. - h);
 }
 
+float smin(float a, float b, float k) {
+  float res = exp(-k * a) + exp(-k * b);
+  return -log(res) / k;
+}
+
 float sdHeart(vec3 p, float s) {
   mat3 m_z = mat3(cos(3.14), -sin(3.14), 0, sin(3.14), cos(3.14), 0, 0, 0, 1);
 
@@ -39,6 +46,11 @@ float sdSphere(vec3 p, float r) { return length(p) - r; }
 float sdBox(vec3 p, vec3 b, float r) {
   vec3 d = abs(p) - b;
   return min(max(d.x, max(d.y, d.z)), 0.) + length(max(d, 0.)) - r;
+}
+
+float sdTorus(vec3 p, vec2 t) {
+  vec2 q = vec2(length(p.xz) - t.x, p.y);
+  return length(q) - t.y;
 }
 
 float sdBoundingBox(vec3 p, vec3 b, float e) {
@@ -117,35 +129,39 @@ float lineSegment(in vec2 p, vec2 a, vec2 b) {
 /**
  * Materials, lighting, et al
  */
-vec2 castRay(vec3 ro, vec3 rd) {
-  vec2 res = vec2(-1.);
+
+vec4 castRay(vec3 ro, vec3 rd) {
+  vec4 res = vec4(-1.);
 
   float tmin = 0.;
   float tmax = 20.;
-  float m = -1., t = tmin;
+  float t = tmin;
+  vec3 m = vec3(-1.);
 
   float tp1 = (0. - ro.y) / rd.y;
 
   if (tp1 > 0.) {
     tmax = min(tmax, tp1);
-    res = vec2(tp1, 1.);
   }
 
-  if (t > -0.5) {
-    for (int i = 0; i < 70 && t <= tmax; i++) {
-      vec2 h = map(ro + rd * t);
+  if (t > -.5) {
+    for (int i = 0; i < 255 && t <= tmax; i++) {
+      vec4 h = map(ro + rd * t, 1.);
 
       if (abs(h).x < (0.0005 * t)) {
-        res = vec2(t, h.y);
         break;
       }
 
       t += h.x;
-      m = h.y;
+      m = h.yzw;
     }
   }
 
-  return res;
+  if (t > tmax) {
+    m = vec3(-1.);
+  }
+
+  return vec4(t, m);
 }
 
 float calcAO(in vec3 pos, in vec3 nor) {
@@ -154,7 +170,7 @@ float calcAO(in vec3 pos, in vec3 nor) {
 
   for (int i = 0; i < 5; i++) {
     float hr = .01 + .12 * float(i) / 4.;
-    float dd = map(nor * hr + pos).x;
+    float dd = map(nor * hr + pos, 1.).x;
 
     occ += -(dd - hr) * sca;
     sca *= .95;
@@ -173,7 +189,7 @@ float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
   float t = tmin;
 
   for (int i = ZERO; i < 24 && t <= tmax; i++) {
-    float h = map(ro + rd * t).x;
+    float h = map(ro + rd * t, 1.).x;
     float s = clamp(k * h / t, 0., 1.);
 
     res = min(res, s * s * (3. - 2. * s));
@@ -193,7 +209,7 @@ vec3 calcNormal(vec3 p) {
   for (int i = ZERO; i < 4; i++) {
     vec3 e = 0.5773 *
              (2. * vec3((((i + 3) >> 1) & 1), ((i >> 1) & 1), (i & 1)) - 1.);
-    n += e * map(p + .0005 * e).x;
+    n += e * map(p + .0005 * e, 1.).x;
   }
 
   return normalize(n);
@@ -203,4 +219,9 @@ vec3 faceNormals(vec3 p) {
   vec3 fdx = dFdx(p);
   vec3 fdy = dFdy(p);
   return normalize(cross(fdx, fdy));
+}
+
+vec3 rayPlaneIntersection(vec3 ro, vec3 rd, vec4 plane) {
+  float t = -(dot(ro, plane.xyz) + plane.w) / dot(rd, plane.xyz);
+  return ro + t * rd;
 }
