@@ -13,28 +13,6 @@ vec2 sqFrame(vec2 st) {
   return p;
 }
 
-vec2 sqFrame(vec2 st, vec3 coord) {
-  vec2 p = 2. * (coord.xy / st.xy) - 1.;
-
-  p.x *= st.x / st.y;
-
-  return p;
-}
-
-vec3 rayDirection(float fov, vec2 p) {
-  vec2 xy = p;
-  float z = tan(radians(fov));
-  return normalize(vec3(xy, -z));
-}
-
-mat4 getCamera(vec3 eye, vec3 center, vec3 up) {
-  vec3 f = normalize(center - eye);
-  vec3 s = normalize(cross(f, up));
-  vec3 u = cross(s, f);
-
-  return mat4(vec4(s, 0.), vec4(u, 0.), vec4(-f, 0.), vec4(0., 0., 0., 1.));
-}
-
 /**
  * Noise functions
  */

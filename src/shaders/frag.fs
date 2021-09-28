@@ -17,7 +17,7 @@ out vec4 fragColor;
 // ----------------------------------------------------------------------
 
 #define ZERO (min(iFrame, 0))
-#define AA 3
+#define AA 2
 
 const vec3 primary = vec3(1., .2, .4);
 vec2 map(vec3 p);
@@ -93,7 +93,7 @@ vec4 render(vec3 ro, vec3 rd) {
     lin += .5 * fre * occ;
 
     if (m >= 1.5) {
-      lin += .05 * fre * (nor / sin(fbm(p.xy, int(t)) * cross(hal, ref)));
+      lin += fre * (nor / sin(fbm(p.xy, int(t)) + cross(hal, ref)));
     }
 
     col *= vec4(lin, 1.);
@@ -111,8 +111,8 @@ void main() {
   for (int m = 0; m < AA; m++)
     for (int n = 0; n < AA; n++) {
       vec2 o = vec2(float(m), float(n)) / float(AA);
-      vec2 p = (-iResolution.xy + 2. * (gl_FragCoord.xy + o)) / iResolution.y;
-      vec4 ndc = vec4(p.xy, 1., 1.);
+      vec2 st = sqFrame(iResolution.xy + o);
+      vec4 ndc = vec4(st.xy, 1., 1.);
 
       vec3 ro =
           vec3(cameraPosition.x, max(0.1, cameraPosition.y), cameraPosition.z);
