@@ -14,8 +14,10 @@ const App: React.FC = () => {
       fragmentShader,
       transparent: true,
       uniforms: {
+        cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
+        cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
         dpr: new THREE.Uniform(1),
-        iCamera: new THREE.Uniform(new THREE.Vector3(0, 0, 0)),
+        iFrame: new THREE.Uniform(1),
         iMouse: new THREE.Uniform(new THREE.Vector2(0, 0)),
         iResolution: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
         iTime: new THREE.Uniform(0)
@@ -32,14 +34,19 @@ const App: React.FC = () => {
       const $s = $m.material
 
       if ($s instanceof THREE.RawShaderMaterial) {
+        $s.uniforms.iFrame.value += 1
         $s.uniforms.iTime.value = clock.getElapsedTime()
         $s.uniforms.iMouse.value = new THREE.Vector2(mouse.x, mouse.y)
-        $s.uniforms.iCamera.value = camera.position
 
         $s.uniforms.iResolution.value = new THREE.Vector3(
           size.width * viewport.dpr,
           size.height * viewport.dpr,
           viewport.dpr
+        )
+
+        $s.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
+        $s.uniforms.cameraProjectionMatrixInverse.value.copy(
+          camera.projectionMatrixInverse
         )
       }
     }
@@ -47,16 +54,11 @@ const App: React.FC = () => {
 
   return (
     <React.Suspense key={Math.random()} fallback={null}>
-      <OrbitControls enableDamping makeDefault position={[0, 0, 1]} />
+      <OrbitControls autoRotate autoRotateSpeed={0.5} enableDamping />
 
-      <mesh position={[0, 0, 1]} {...{ ref }}>
+      <mesh frustumCulled={false} {...{ ref }}>
         <planeBufferGeometry args={[2, 2]} />
         <rawShaderMaterial {...data} />
-      </mesh>
-
-      <mesh position={[0, 0, 1]}>
-        <sphereBufferGeometry args={[1]} />
-        <meshNormalMaterial />
       </mesh>
     </React.Suspense>
   )

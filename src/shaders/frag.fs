@@ -2,85 +2,129 @@
 
 precision mediump float;
 
-float map(vec3 p);
+uniform float iTime;
+uniform int iFrame;
+uniform vec3 iResolution;
+
+uniform vec3 cameraPosition;
+uniform mat4 cameraWorldMatrix;
+uniform mat4 cameraProjectionMatrixInverse;
+
+in vec3 vUv;
+
+out vec4 fragColor;
+
+// ----------------------------------------------------------------------
+
+#define ZERO (min(iFrame, 0))
+#define AA 3
+
+const vec3 primary = vec3(1., .2, .4);
+vec2 map(vec3 p);
 
 // clang-format off
 #pragma glslify: import './lib.glsl'
 #pragma glslify: import './shapes.glsl'
 // clang-format on
 
-uniform float iTime;
-uniform vec3 iResolution;
-uniform vec2 iMouse;
-uniform vec3 cameraPosition;
-
-in vec3 vUv;
-in vec3 vPos;
-in vec3 vNormal;
-
-out vec4 fragColor;
-
 // ----------------------------------------------------------------------
 
-const vec3 primary = vec3(1., 0.2, 0.4);
-const int steps = 255;
-const float minDepth = 0.01;
-const float maxDepth = 100.;
-
-float map(vec3 p) {
-  float d = 1e10;
-  float an = sin(iTime);
+vec2 map(vec3 p) {
+  vec2 res = vec2(sdPlane(p), 1.);
 
   {
-    vec3 q = p;
-    float dt = sdSphere(q, 1.);
-
-    d = min(d, dt);
+    float d = sdSphere(p - vec3(-.4, .5, 0.), .25);
+    res = opU(res, vec2(d, 2.5));
   }
 
-  return d;
-}
+  {
+    float d = sdHeart(p - vec3(.4, .5, 0.), .25);
+    res = opU(res, vec2(d, 2.5));
+  }
 
-vec3 calcNormal(vec3 p) {
-  return normalize(vec3(
-      map(vec3(p.x + 0.0001, p.y, p.z)) - map(vec3(p.x - 0.0001, p.y, p.z)),
-      map(vec3(p.x, p.y + 0.0001, p.z)) - map(vec3(p.x, p.y - 0.0001, p.z)),
-      map(vec3(p.x, p.y, p.z + 0.0001)) - map(vec3(p.x, p.y, p.z - 0.0001))));
-}
-
-vec3 material(vec3 p, vec3 ro, vec3 rd) {
-  vec3 nor = calcNormal(p);
-  vec3 lig = normalize(rd.zxy);
-
-  float dif = clamp(dot(nor, lig), 0., 1.);
-  float amb = .5 + .5 * nor.y;
-
-  return primary * amb + primary * dif;
+  return res;
 }
 
 vec4 render(vec3 ro, vec3 rd) {
-  vec4 col = vec4(0.);
+  vec2 res = castRay(ro, rd);
+  float t = res.x;
+  float m = res.y;
 
-  float depth = 0.;
-  for (int i = 0; i < steps && depth <= maxDepth; ++i) {
-    vec3 p = ro + rd * depth;
-    float dist = map(p);
+  vec4 fog = vec4(.8, .4, .9, 1.);
+  vec4 col = fog + rd.y;
 
-    if (dist <= minDepth) {
-      col = vec4(material(p, ro, rd), 1.);
+  if (m >= -.5) {
+    vec3 p = ro + t * rd;
+
+    vec3 nor = calcNormal(p);
+    vec3 lig = normalize(vec3(ro.xy, ro.z + 1.));
+    vec3 ref = reflect(rd, nor);
+    vec3 hal = normalize(lig - rd);
+
+    col = vec4(primary, 1.) * (m - 1.);
+
+    // Floor
+    if (m < 1.5) {
+      float f = mod(floor(3. * p.z) + floor(3. * p.x), 2.);
+
+      col = .5 + .1 * f * vec4(1.);
     }
 
-    depth += dist;
+    // Lighting
+    float occ = calcAO(p, nor);                        // ambient occlusion
+    float amb = sqrt(clamp(.5 + .5 * nor.y, 0., 1.));  // ambient
+    float dif = clamp(dot(nor, lig), 0., 1.);          // diffuse
+
+    float bac = clamp(dot(nor, hal), 0., 1.) * clamp(1. - p.y, 0., 1.);
+    float dom = smoothstep(-.1, .1, ref.y);                 // dome
+    float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 4.);  // fresnel
+    float spe = pow(clamp(dot(ref, hal), 0., .94), 16.);    // specular
+
+    vec3 lin = vec3(0.);
+    dif *= calcSoftshadow(p, lig, .02, 2.5, 8.);
+    dom *= calcSoftshadow(p, ref, .02, 2.5, 8.);
+
+    lin += 1.3 * dif;
+    lin += 2. * spe * fog.xyz * dif;
+
+    lin += .4 * amb * occ;
+    lin += .2 * dom * occ;
+    lin += .2 * bac * occ;
+    lin += .5 * fre * occ;
+
+    if (m >= 1.5) {
+      lin += .05 * fre * (nor / sin(fbm(p.xy, int(t)) * cross(hal, ref)));
+    }
+
+    col *= vec4(lin, 1.);
+
+    // Fog
+    col = mix(col, fog, 1. - exp(-0.0002 * pow(t, 3.)));
   }
 
-  return col;
+  return vec4(clamp(col, 0., 1.));
 }
 
 void main() {
-  vec2 st = sqFrame(iResolution.xy);
+  vec4 col = vec4(0.);
 
-  vec3 ro = normalize(vNormal);
-  vec3 rd = normalize(vPos);
+  for (int m = 0; m < AA; m++)
+    for (int n = 0; n < AA; n++) {
+      vec2 o = vec2(float(m), float(n)) / float(AA);
+      vec2 p = (-iResolution.xy + 2. * (gl_FragCoord.xy + o)) / iResolution.y;
+      vec4 ndc = vec4(p.xy, 1., 1.);
 
-  fragColor = render(ro, rd);
+      vec3 ro =
+          vec3(cameraPosition.x, max(0.1, cameraPosition.y), cameraPosition.z);
+
+      vec3 rd =
+          normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc)
+              .xyz;
+
+      col += pow(render(ro, rd), vec4(vec3(.4545), 0.));
+    }
+
+  col /= float(AA * AA);
+
+  fragColor = col;
 }

@@ -12,16 +12,15 @@ in vec3 normal;
 in vec3 uv;
 
 out vec3 vUv;
-out vec3 vPos;
-out vec3 vNormal;
+out vec4 vPos;
+out mat4 vModelViewMatrix;
+out mat4 vProjectionMatrix;
 
 void main() {
-  vec4 pos = vec4(position, 1.);
-  vec4 cpt = projectionMatrix * modelViewMatrix * pos;
-
   vUv = uv;
-  vPos = cpt.xyz;
-  vNormal = (normalMatrix * vec4(normal, 1.)).xyz;
+  vPos = vec4(position, 1.);
+  vModelViewMatrix = modelViewMatrix;
+  vProjectionMatrix = projectionMatrix;
 
-  gl_Position = pos;
+  gl_Position = vPos;
 }

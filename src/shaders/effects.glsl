@@ -1,6 +1,6 @@
 vec3 blendOverlay(vec3 base, vec3 blend) {
-  return mix(1.0 - 2.0 * (1.0 - base) * (1.0 - blend), 2.0 * base * blend,
-             step(base, vec3(0.5)));
+  return mix(1. - 2. * (1. - base) * (1. - blend), 2. * base * blend,
+             step(base, vec3(.5)));
 }
 
 vec3 vignette(vec2 p, float radius) {
