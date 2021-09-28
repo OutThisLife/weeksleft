@@ -129,8 +129,9 @@ void main() {
   vec2 st = sqFrame(iResolution.xy);
   vec4 ndc = vec4(st.xy, 1., 1.);
 
-  vec3 ro =
-      vec3(cameraPosition.x, max(0.1, cameraPosition.y), cameraPosition.z);
+  vec3 ro = vec3(cameraPosition.x, max(0.1, 1. + cameraPosition.y),
+                 cameraPosition.z) /
+            3.;
 
   vec3 rd =
       normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc).xyz;
@@ -138,7 +139,7 @@ void main() {
   vec4 col = vec4(1);
   render(ro, rd, col);
 
-  // col = pow(col, vec4(vec3(.4545), 1.));
+  // col = pow(col, vec4(vec3(.4545), 0.));
 
   fragColor = clamp(col, 0., 1.);
 }

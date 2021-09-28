@@ -54,7 +54,7 @@ const App: React.FC = () => {
 
   return (
     <React.Suspense key={Math.random()} fallback={null}>
-      <OrbitControls autoRotateSpeed={0.5} enableDamping />
+      <OrbitControls autoRotate autoRotateSpeed={0.5} enableDamping />
 
       <mesh frustumCulled={false} {...{ ref }}>
         <planeBufferGeometry args={[2, 2]} />
