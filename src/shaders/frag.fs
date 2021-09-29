@@ -1,6 +1,4 @@
-#version 300 es
-
-precision mediump float;
+precision highp float;
 
 #ifdef GL_OES_standard_derivatives
 #extension GL_OES_standard_derivatives : enable
@@ -14,13 +12,9 @@ uniform vec3 cameraPosition;
 uniform mat4 cameraWorldMatrix;
 uniform mat4 cameraProjectionMatrixInverse;
 
-in vec3 vUv;
-
-out vec4 fragColor;
+varying vec3 vUv;
 
 // ----------------------------------------------------------------------
-
-#define ZERO (min(iFrame, 0))
 
 const vec3 primary = vec3(1., .2, .4);
 vec4 map(vec3 p, float s);
@@ -54,16 +48,18 @@ void inverseRender(vec3 ro, vec3 rd, inout vec4 col) {
   float t = 0.;
   float tmax = 20.;
 
-  for (int i = 0; i < 64 && t <= tmax; i++) {
+  for (int i = 0; i < 64; i++) {
     vec3 p = (ro + t * rd);
     vec4 h = map(p, (0.3 + (.1 * sin(iTime)) + .2));
 
-    if (abs(h).x < (0.0005 * t)) {
-      vec3 nor = calcNormal(p);
-      float ndotl = abs(dot(-rd, nor));
-      float rim = pow(1. - ndotl, 3.);
+    if (abs(h).x < (0.0005 * t) || t >= tmax) {
+      if (t < tmax) {
+        vec3 nor = calcNormal(p);
+        float ndotl = abs(dot(-rd, nor));
+        float rim = pow(1. - ndotl, 3.);
 
-      col = vec4(mix(refract(nor, rd, .85), vec3(1.), rim), 1.);
+        col = vec4(mix(refract(nor, rd, .85), vec3(1.), rim), 1.);
+      }
 
       break;
     }
@@ -82,7 +78,11 @@ void render(vec3 ro, vec3 rd, inout vec4 col) {
     tmax = min(tmax, tp1);
   }
 
-  for (int i = 0; i < 255 && t <= tmax; i++) {
+  for (int i = 0; i < 255; i++) {
+    if (t >= tmax) {
+      break;
+    }
+
     vec3 p = ro + t * rd;
     vec4 h = map(p, 1.);
 
@@ -134,18 +134,16 @@ void main() {
   vec4 ndc = vec4(st.xy, 1., 1.);
 
   vec3 ro =
-      vec3(cameraPosition.x, max(0.1, 1. + cameraPosition.y), cameraPosition.z);
+      vec3(cameraPosition.x, max(0.1, cameraPosition.y), cameraPosition.z);
 
   vec3 rd =
       normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc).xyz;
 
-  vec4 col = vec4(1);
+  vec4 col = vec4(1.);
   render(ro, rd, col);
 
   // col = pow(col, vec4(vec3(.4545), 0.));
-  // col *= aastep(0.2, length(col));
+  col *= aastep(0.2, length(col));
 
-  col = vec4(st.xy, 1., 1.);
-
-  fragColor = clamp(col, 0., 1.);
+  gl_FragColor = clamp(col, 0., 1.);
 }

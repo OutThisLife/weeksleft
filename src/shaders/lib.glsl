@@ -58,7 +58,8 @@ float noise(in vec3 x) {
              f.z);
 }
 
-float fbm(in vec2 st, int o) {
+float fbm(in vec2 st) {
+  const int o = 1;
   float value = 0.;
   float amplitude = .5;
   float frequency = 0.;

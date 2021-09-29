@@ -25,7 +25,7 @@ const App: React.FC = () => {
     []
   )
 
-  useFrame(({ camera, clock, mouse, size, viewport }) => {
+  useFrame(({ camera, clock, mouse, size, viewport: { dpr } }) => {
     const $m = ref.current as THREE.Mesh
 
     if ($m instanceof THREE.Mesh) {
@@ -37,9 +37,9 @@ const App: React.FC = () => {
         $s.uniforms.iMouse.value = new THREE.Vector2(mouse.x, mouse.y)
 
         $s.uniforms.iResolution.value = new THREE.Vector3(
-          size.width * viewport.dpr,
-          size.height * viewport.dpr,
-          viewport.dpr
+          size.width * dpr,
+          size.height * dpr,
+          dpr
         )
 
         $s.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
@@ -55,13 +55,8 @@ const App: React.FC = () => {
       <OrbitControls autoRotate autoRotateSpeed={0.3} enableDamping />
 
       <mesh frustumCulled={false} {...{ ref }}>
-        <planeBufferGeometry args={[1, 1]} />
+        <planeBufferGeometry args={[2, 2]} />
         <rawShaderMaterial {...data} />
-      </mesh>
-
-      <mesh>
-        <boxBufferGeometry args={[2, 2]} />
-        <meshNormalMaterial />
       </mesh>
     </React.Suspense>
   )

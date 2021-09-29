@@ -145,10 +145,10 @@ vec4 castRay(vec3 ro, vec3 rd) {
   }
 
   if (t > -.5) {
-    for (int i = 0; i < 255 && t <= tmax; i++) {
+    for (int i = 0; i < 255; i++) {
       vec4 h = map(ro + rd * t, 1.);
 
-      if (abs(h).x < (0.0005 * t)) {
+      if (abs(h).x < (0.0005 * t) || t >= tmax) {
         break;
       }
 
@@ -188,14 +188,14 @@ float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
   float res = 1.;
   float t = tmin;
 
-  for (int i = ZERO; i < 24 && t <= tmax; i++) {
+  for (int i = 0; i < 24; i++) {
     float h = map(ro + rd * t, 1.).x;
     float s = clamp(k * h / t, 0., 1.);
 
     res = min(res, s * s * (3. - 2. * s));
     t += clamp(h, .02, .2);
 
-    if (res <= 0.001) {
+    if (res <= 0.001 || t >= tmax) {
       break;
     }
   }
@@ -204,21 +204,10 @@ float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
 }
 
 vec3 calcNormal(vec3 p) {
-  vec3 n = vec3(0.);
+  vec2 e = vec2(1.0, -1.0) * 0.5773 * 0.0005;
 
-  for (int i = ZERO; i < 4; i++) {
-    vec3 e = 0.5773 *
-             (2. * vec3((((i + 3) >> 1) & 1), ((i >> 1) & 1), (i & 1)) - 1.);
-    n += e * map(p + .0005 * e, 1.).x;
-  }
-
-  return normalize(n);
-}
-
-vec3 faceNormals(vec3 p) {
-  vec3 fdx = dFdx(p);
-  vec3 fdy = dFdy(p);
-  return normalize(cross(fdx, fdy));
+  return normalize(e.xyy * map(p + e.xyy, 1.).x + e.yyx * map(p + e.yyx, 1.).x +
+                   e.yxy * map(p + e.yxy, 1.).x + e.xxx * map(p + e.xxx, 1.).x);
 }
 
 vec3 rayPlaneIntersection(vec3 ro, vec3 rd, vec4 plane) {
