@@ -10,7 +10,7 @@ const init = (
     {}
 ) => ({
   extends: ['airbnb-typescript-prettier'],
-  ignorePatterns: ['.eslintrc.js', 'vite.config.ts'],
+  ignorePatterns: ['.eslintrc.js', 'vite.config.ts', 'glslify.ts'],
   overrides: [
     {
       extends: ['plugin:react-hooks/recommended'],

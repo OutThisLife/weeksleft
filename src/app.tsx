@@ -1,4 +1,5 @@
-import { useAspect } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
+import type { ShaderMaterialProps } from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
 import * as React from 'react'
 import * as THREE from 'three'
@@ -6,15 +7,17 @@ import fragmentShader from './shaders/frag.fs'
 import vertexShader from './shaders/vert.vs'
 
 const App: React.FC = () => {
-  const ref = React.useRef<THREE.Mesh>()
-  const scale = useAspect(1024, 768)
+  const ref = React.useRef<any>()
 
-  const data = React.useMemo(
+  const data = React.useMemo<ShaderMaterialProps>(
     () => ({
       fragmentShader,
       uniforms: {
+        cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
+        cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
+        iFrame: new THREE.Uniform(1),
         iMouse: new THREE.Uniform(new THREE.Vector2(0, 0)),
-        iResolution: new THREE.Uniform(new THREE.Vector2(0, 0)),
+        iResolution: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
         iTime: new THREE.Uniform(0)
       },
       vertexShader
@@ -22,25 +25,38 @@ const App: React.FC = () => {
     []
   )
 
-  useFrame(({ clock, mouse, size, viewport }) => {
-    if (ref.current instanceof THREE.Mesh) {
-      const $s = ref.current.material as THREE.RawShaderMaterial
+  useFrame(({ camera, clock, mouse, size, viewport: { dpr } }) => {
+    const $m = ref.current as THREE.Mesh
 
-      $s.uniforms.iTime.value = clock.getElapsedTime()
-      $s.uniforms.iMouse.value = new THREE.Vector2(mouse.x, mouse.y)
+    if ($m instanceof THREE.Mesh) {
+      const $s = $m.material
 
-      $s.uniforms.iResolution.value = new THREE.Vector2(
-        size.width * viewport.dpr,
-        size.height * viewport.dpr
-      )
+      if ($s instanceof THREE.RawShaderMaterial) {
+        $s.uniforms.iFrame.value += 1
+        $s.uniforms.iTime.value = clock.getElapsedTime()
+        $s.uniforms.iMouse.value = new THREE.Vector2(mouse.x, mouse.y)
+
+        $s.uniforms.iResolution.value = new THREE.Vector3(
+          size.width * dpr,
+          size.height * dpr,
+          dpr
+        )
+
+        $s.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
+        $s.uniforms.cameraProjectionMatrixInverse.value.copy(
+          camera.projectionMatrixInverse
+        )
+      }
     }
   })
 
   return (
     <React.Suspense key={Math.random()} fallback={null}>
-      <mesh {...{ ref, scale }}>
-        <planeBufferGeometry args={[1, 1]} />
-        <rawShaderMaterial transparent {...data} />
+      <OrbitControls autoRotate autoRotateSpeed={0.3} enableDamping />
+
+      <mesh frustumCulled={false} {...{ ref }}>
+        <planeBufferGeometry args={[2, 2]} />
+        <rawShaderMaterial {...data} />
       </mesh>
     </React.Suspense>
   )

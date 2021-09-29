@@ -1,13 +1,14 @@
-precision mediump float;
-
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;
-uniform mat4 modelMatrix;
+precision highp float;
 
 attribute vec3 position;
+attribute vec3 uv;
+
+varying vec3 vUv;
+varying vec4 vPos;
 
 void main() {
+  vUv = uv;
+  vPos = vec4(position, 1.);
 
-  gl_Position =
-      (projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0));
+  gl_Position = vPos;
 }
