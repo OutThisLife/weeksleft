@@ -15,7 +15,6 @@ const App: React.FC = () => {
       uniforms: {
         cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
         cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
-        dpr: new THREE.Uniform(1),
         iFrame: new THREE.Uniform(1),
         iMouse: new THREE.Uniform(new THREE.Vector2(0, 0)),
         iResolution: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),

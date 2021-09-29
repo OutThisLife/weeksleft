@@ -145,5 +145,7 @@ void main() {
   // col = pow(col, vec4(vec3(.4545), 0.));
   // col *= aastep(0.2, length(col));
 
+  col = vec4(ro.xyz, 1.);
+
   fragColor = clamp(col, 0., 1.);
 }
