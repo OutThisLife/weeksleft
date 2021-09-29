@@ -130,8 +130,7 @@ void render(vec3 ro, vec3 rd, inout vec4 col) {
 }
 
 void main() {
-  vec2 st = sqFrame(iResolution.xy);
-  vec4 ndc = vec4(st.xy, 1., 1.);
+  vec4 ndc = vec4(vUv.xy - vec2(.5, .33), 1., 1.);
 
   vec3 ro =
       vec3(cameraPosition.x, max(0.1, cameraPosition.y), cameraPosition.z);
@@ -142,8 +141,7 @@ void main() {
   vec4 col = vec4(1.);
   render(ro, rd, col);
 
-  // col = pow(col, vec4(vec3(.4545), 0.));
-  col *= aastep(0.2, length(col));
+  col *= pow(col, vec4(.4545));
 
   gl_FragColor = clamp(col, 0., 1.);
 }
