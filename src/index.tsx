@@ -8,7 +8,7 @@ import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas mode="concurrent">
+    <Canvas camera={{ fov: 75, position: [0, 0, 3] }} mode="concurrent">
       <Stats />
       <App />
     </Canvas>

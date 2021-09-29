@@ -1,6 +1,10 @@
-#version 330
+#version 300 es
 
 precision mediump float;
+
+#ifdef GL_OES_standard_derivatives
+#extension GL_OES_standard_derivatives : enable
+#endif
 
 uniform float iTime;
 uniform int iFrame;
@@ -109,8 +113,8 @@ void render(vec3 ro, vec3 rd, inout vec4 col) {
       lin += .4 * amb * occ;
 
       col *= vec4(lin, 1.);
-
       inverseRender(p, refract(rd, nor, .9), col);
+
       break;
     }
 
@@ -129,9 +133,8 @@ void main() {
   vec2 st = sqFrame(iResolution.xy);
   vec4 ndc = vec4(st.xy, 1., 1.);
 
-  vec3 ro = vec3(cameraPosition.x, max(0.1, 1. + cameraPosition.y),
-                 cameraPosition.z) /
-            3.;
+  vec3 ro =
+      vec3(cameraPosition.x, max(0.1, 1. + cameraPosition.y), cameraPosition.z);
 
   vec3 rd =
       normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc).xyz;
@@ -140,6 +143,7 @@ void main() {
   render(ro, rd, col);
 
   // col = pow(col, vec4(vec3(.4545), 0.));
+  // col *= aastep(0.2, length(col));
 
   fragColor = clamp(col, 0., 1.);
 }
