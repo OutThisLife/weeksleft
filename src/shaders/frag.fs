@@ -130,7 +130,7 @@ void render(vec3 ro, vec3 rd, inout vec4 col) {
 }
 
 void main() {
-  vec2 st = (-iResolution.xy + 2. * gl_FragCoord.xy) / iResolution.y;
+  vec2 st = sqFrame(iResolution.xy);
   vec4 ndc = vec4(st.xy, 1., 1.);
 
   vec3 ro =

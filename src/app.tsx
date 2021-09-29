@@ -56,8 +56,13 @@ const App: React.FC = () => {
       <OrbitControls autoRotate autoRotateSpeed={0.3} enableDamping />
 
       <mesh frustumCulled={false} {...{ ref }}>
-        <planeBufferGeometry args={[2, 2]} />
+        <planeBufferGeometry args={[1, 1]} />
         <rawShaderMaterial {...data} />
+      </mesh>
+
+      <mesh>
+        <boxBufferGeometry args={[2, 2]} />
+        <meshNormalMaterial />
       </mesh>
     </React.Suspense>
   )
