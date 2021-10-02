@@ -16,7 +16,11 @@ varying vec3 vUv;
 
 // ----------------------------------------------------------------------
 
+float an = abs(.5 * (iTime - 10.));
 const vec3 primary = vec3(1., .2, .4);
+const vec3 secondary = vec3(0., 0., .933);
+const vec3 gold = vec3(.831, .686, .216);
+
 vec4 map(vec3 p, float s);
 
 // clang-format off
@@ -27,113 +31,118 @@ vec4 map(vec3 p, float s);
 // ----------------------------------------------------------------------
 
 vec4 map(vec3 p, float s) {
-  vec4 res = vec4(1.);
+  vec4 res = vec4(1e10);
 
-  {
-    float d = sdSphere(p - vec3(-.4, .5, 0.), .25 * s);
+  for (int i = 0; i <= 1; i++) {
+    vec3 q = p - vec3(i == 0 ? .8 : -.8, .5, 0.);
 
-    res = opU(res, vec4(d, vec3(0., 0., 1.)));
+    float d1 = sdBox(q, vec3(.25) * s);
+
+    float d2 =
+        sdTriPrism(rotate(q, vec3(0., 0., 1.), 2. * an), vec2(.5), .1 * s);
+
+    float d3 = sdOctahedron(
+        rotate(q, vec3(0., 0., -1.), 2. * an) - vec3(0., 0., .2), .05 * s);
+
+    float d = opSmoothSubtraction(d2, d1, .01);
+    d = opUnion(d, d3);
+
+    res = opU(res, vec4(d, primary));
   }
 
-  {
-    float d = sdHeart(p - vec3(.4, .5, 0.), .25 * s);
+  for (int i = 0; i <= 1; i++) {
+    float n = float(i);
+    vec3 q = p;
 
-    res = opU(res, vec4(d, vec3(0., 1., 0.)));
+    q = opRepLim(q - vec3(0, .5, 0.), 1.5 + n,
+                 vec3(.1, .1 + (0.01 * n), 0. + (0.2 * n)));
+
+    if (i == 1) {
+      q = rotate(q, vec3(-1., 1., 0.), 2. * an);
+    }
+
+    float d = sdOctahedron(q, 0.1 * s);
+
+    float d1 = sdOctahedron(q, .09 * s);
+    float d2 = sdBoundingBox(q, vec3(.1) * s, .01 * s);
+
+    if (i == 1) {
+      d2 = sdSphere(q, .025 * s);
+
+      d = opSmoothSubtraction(d2, d1, 0.09);
+      res = opU(res, vec4(d, gold));
+    } else {
+      float disp = smoothstep(.15, d,
+                              length(vec3(sin((2. + (1. * sin(an))) * q.x),
+                                          sin((2. + (1. * sin(an))) * q.y),
+                                          sin((2. + (1. * cos(an))) * q.z))));
+      d = opUnion(d1 + disp, d2);
+      res = opU(res, vec4(d, vec3(1.)));
+    }
   }
 
   return res;
 }
 
-void inverseRender(vec3 ro, vec3 rd, inout vec4 col) {
-  float t = 0.;
-  float tmax = 20.;
+vec3 getColor(vec3 p, vec3 ro, vec3 rd, vec3 col) {
+  vec3 nor = calcNormal(p);
+  vec3 lig = normalize(vec3(.9, .4, -.4));
+  vec3 ref = reflect(rd, nor);
+  vec3 hal = normalize(lig - rd);
 
-  for (int i = 0; i < 64; i++) {
-    vec3 p = (ro + t * rd);
-    vec4 h = map(p, (0.3 + (.1 * sin(iTime)) + .2));
+  float ndotl = abs(dot(-rd, nor));
+  float rim = pow(1. - ndotl, 4.);
 
-    if (abs(h).x < (0.0005 * t) || t >= tmax) {
-      if (t < tmax) {
-        vec3 nor = calcNormal(p);
-        float ndotl = abs(dot(-rd, nor));
-        float rim = pow(1. - ndotl, 3.);
+  float occ = calcAO(p, nor);                        // ambient occlusion
+  float amb = sqrt(clamp(.5 + .5 * nor.y, 0., 1.));  // ambient
+  float dif = clamp(dot(nor, lig), 0., 1.);          // diffuse
 
-        col = vec4(mix(refract(nor, rd, .85), vec3(1.), rim), 1.);
-      }
+  float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 8.);  // fresnel
+  float spe = pow(clamp(dot(ref, hal), 0., .94), 30.);    // specular
 
-      break;
-    }
+  vec3 lin = col * amb;
+  lin += .2 * dif * occ;
+  lin += 2. * spe * dif;
+  lin += 2. * fre * dif;
 
-    t += h.x;
+  lin += sin(mix(refract(nor, rd, .85), vec3(1.), rim));
+
+  return lin;
+}
+
+void reflectionRay(vec3 ro, vec3 rd, inout vec4 col) {
+  float t = castRay(ro, rd);
+
+  if (t < MAX_DIST && t > -.5) {
+    vec3 p = ro + t * rd;
+    col = mix(col, vec4(getColor(p, ro, rd, vec3(1.)), 1.), .2);
   }
 }
 
 void render(vec3 ro, vec3 rd, inout vec4 col) {
-  float t = 0.;
-  float tmax = 20.;
+  float t = castRay(ro, rd);
 
-  float tp1 = (0. - ro.y) / rd.y;
+  vec3 p = ro + t * rd;
+  vec4 h = map(p, 1.);
 
-  if (tp1 > 0.) {
-    tmax = min(tmax, tp1);
-  }
-
-  for (int i = 0; i < 255; i++) {
-    if (t >= tmax) {
-      break;
+  if (t > -.5)
+    for (int i = 0; i < AA; i++) {
+      if (t == MAX_DIST) {
+        vec3 p = vec3(0., 1., 0.);
+        vec3 planePoint = rayPlaneIntersection(ro, rd, vec4(p, 0.));
+        col.xyz *= vec3(.002, .001, .02) +
+                   mix(.95, .99, calcSoftshadow(planePoint, p, .02, 2.5, 8.));
+      } else {
+        col = vec4(getColor(p, ro, rd, h.yzw), 1.);
+        reflectionRay(p + rd * EPSILON, reflect(rd, calcNormal(p)), col);
+      }
     }
-
-    vec3 p = ro + t * rd;
-    vec4 h = map(p, 1.);
-
-    if (abs(h).x < (0.0005 * t)) {
-      vec3 nor = calcNormal(p);
-      vec3 lig = normalize(vec3(.9, .4, -.4));
-      vec3 ref = reflect(rd, nor);
-      vec3 hal = normalize(lig - rd);
-
-      float ndotl = abs(dot(-rd, nor));
-      float rim = pow(1. - ndotl, 4.);
-
-      float occ = calcAO(p, nor);                        // ambient occlusion
-      float amb = sqrt(clamp(.5 + .5 * nor.y, 0., 1.));  // ambient
-      float dif = clamp(dot(nor, lig), 0., 1.);          // diffuse
-
-      float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 4.);  // fresnel
-      float spe = pow(clamp(dot(ref, hal), 0., .94), 16.);    // specular
-
-      vec3 lin = vec3(.9);
-
-      dif *= calcSoftshadow(p, lig, .02, 2.5, 8.);
-
-      lin *= mix(lin, nor, rim) + rim;
-      lin += 1.3 * dif;
-      lin += 2. * spe * dif;
-      lin += 2. * fre * dif;
-      lin += .4 * amb * occ;
-
-      col *= vec4(lin, 1.);
-      inverseRender(p, refract(rd, nor, .9), col);
-
-      break;
-    }
-
-    t += h.x;
-  }
-
-  if (t >= tmax) {
-    vec3 p = vec3(0., 1., 0.);
-    vec3 planePoint = rayPlaneIntersection(ro, rd, vec4(p, 0.));
-
-    col.xyz *= mix(.9, .98, calcSoftshadow(planePoint, p, .02, 3., 7.));
-  }
 }
 
 void main() {
   vec4 ndc = vec4(vUv.xy - vec2(.5, .33), 1., 1.);
 
-  vec3 ro =
-      vec3(cameraPosition.x, max(0.1, cameraPosition.y), cameraPosition.z);
+  vec3 ro = vec3(cameraPosition.x, max(.1, cameraPosition.y), cameraPosition.z);
 
   vec3 rd =
       normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc).xyz;
@@ -141,7 +150,7 @@ void main() {
   vec4 col = vec4(1.);
   render(ro, rd, col);
 
-  col *= pow(col, vec4(.4545));
+  col *= pow(col, vec4(vec3(.4545), 1.));
 
   gl_FragColor = clamp(col, 0., 1.);
 }
