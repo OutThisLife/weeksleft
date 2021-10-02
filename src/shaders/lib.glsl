@@ -1,7 +1,3 @@
-#define EPSILON 0.001
-#define MAX_STEPS 255
-#define MAX_DIST 80.
-#define AA 2
 
 float dot2(vec2 v) { return dot(v, v); }
 float dot2(vec3 v) { return dot(v, v); }
