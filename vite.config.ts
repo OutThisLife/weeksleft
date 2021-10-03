@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
-import glslify from './plugin-glslify'
+import { glslify } from './plugins'
 
 export default defineConfig({
   base: '/',

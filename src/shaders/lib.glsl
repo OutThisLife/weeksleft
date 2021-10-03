@@ -1,4 +1,3 @@
-
 float dot2(vec2 v) { return dot(v, v); }
 float dot2(vec3 v) { return dot(v, v); }
 float ndot(vec2 a, vec2 b) { return a.x * b.x - a.y * b.y; }
@@ -131,77 +130,103 @@ vec3 rotate(vec3 v, vec3 axis, float angle) {
  * Materials, lighting, et al
  */
 
-float castRay(vec3 ro, vec3 rd) {
+vec2 castRay(vec3 ro, vec3 rd) {
   float t = EPSILON;
   float tmax = MAX_DIST;
+  float m = -1.;
+
+  float tp = (t - ro.y) / rd.y;
+
+  if (tp > 1.) {
+    tmax = min(tmax, tp);
+  }
 
   for (int i = 0; i < MAX_STEPS; i++) {
-    vec4 h = map(ro + rd * t, 1.);
+    vec2 h = sceneSDF(ro + t * rd, 1.);
 
-    // if (abs(h).x < (0.0005 * t) || t >= tmax) {
-
-    if (abs(h).x <= (EPSILON * t) || t >= tmax) {
-      if (t >= tmax) {
-        t = tmax;
-      }
-
+    if (abs(h).x <= EPSILON || t >= tmax) {
       break;
     }
 
+    m = h.y;
     t += max(EPSILON, h.x);
   }
 
-  return t;
+  return vec2(min(tmax, t), m > tmax ? -1. : m);
 }
 
-float calcAO(vec3 pos, vec3 nor) {
-  float occ = 0.;
-  float sca = 1.;
+vec2 castSmallRay(vec3 ro, vec3 rd, float tmax) {
+  float t = 0.;
+  float m = -1.;
 
-  for (int i = 0; i < 5; i++) {
-    float hr = .01 + .12 * float(i) / 4.;
-    float dd = map(nor * hr + pos, 1.).x;
+  for (int i = 0; i < 34; i++) {
+    vec2 h = sceneSDF(ro + t * rd, 1.);
 
-    occ += -(dd - hr) * sca;
-    sca *= .95;
+    if (abs(h).x <= EPSILON || t >= tmax) {
+      break;
+    }
+
+    m = h.y;
+    t += max(EPSILON, h.x);
   }
 
-  return clamp(1. - 3. * occ, 0., 1.);
+  return vec2(min(tmax, t), m > tmax ? -1. : m);
 }
 
 float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
+  float res = 1.;
+  float t = tmin;
+  float ph = 1e10;
+
   float tp = (k - ro.y) / rd.y;
 
   if (tp > .0) {
     tmax = min(tmax, tp);
   }
 
-  float res = 1.;
-  float t = tmin;
+  for (int i = 0; i < 16; i++) {
+    float h = sceneSDF(ro + rd * t, 1.).x;
 
-  for (int i = 0; i < 24; i++) {
-    float h = map(ro + rd * t, 1.).x;
-    float s = clamp(k * h / t, 0., 1.);
-
-    res = min(res, s * s * (3. - 2. * s));
-    t += clamp(h, .02, .2);
-
-    if (res <= EPSILON || t >= tmax) {
+    if (h <= EPSILON || t >= tmax) {
       break;
     }
+
+    float s = clamp(k * h / t, 0.0, 1.0);
+
+    res = min(res, s * s * (3.0 - 2.0 * s));
+    t += clamp(h, 0.02, 0.10);
   }
 
   return clamp(res, 0., 1.);
 }
 
-vec3 calcNormal(vec3 p) {
-  vec2 e = vec2(1.0, -1.0) * 0.5773 * EPSILON;
+float calcAO(vec3 p, vec3 nor) {
+  float occ = 0.;
+  float sca = 1.;
 
-  return normalize(e.xyy * map(p + e.xyy, 1.).x + e.yyx * map(p + e.yyx, 1.).x +
-                   e.yxy * map(p + e.yxy, 1.).x + e.xxx * map(p + e.xxx, 1.).x);
+  for (int i = 0; i < 5; i++) {
+    float h = .001 + .15 * float(i) / 4.;
+    float d = sceneSDF(p + h * nor, 1.).x;
+
+    occ += (h - d) * sca;
+    sca *= 0.95;
+  }
+
+  return clamp(1. - 1.5 * occ, 0., 1.);
 }
 
 vec3 rayPlaneIntersection(vec3 ro, vec3 rd, vec4 plane) {
   float t = -(dot(ro, plane.xyz) + plane.w) / dot(rd, plane.xyz);
   return ro + t * rd;
 }
+
+vec3 calcNormal(vec3 p, float e) {
+  vec3 eps = vec3(e, 0., 0.);
+
+  return normalize(
+      vec3(sceneSDF(p + eps.xyy, 1.).x - sceneSDF(p - eps.xyy, 1.).x,
+           sceneSDF(p + eps.yxy, 1.).x - sceneSDF(p - eps.yxy, 1.).x,
+           sceneSDF(p + eps.yyx, 1.).x - sceneSDF(p - eps.yyx, 1.).x));
+}
+
+vec3 calcNormal(vec3 pos) { return calcNormal(pos, EPSILON); }

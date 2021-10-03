@@ -11,8 +11,13 @@ const App: React.FC = () => {
 
   const data = React.useMemo<ShaderMaterialProps>(
     () => ({
+      extensions: {
+        derivatives: true,
+        drawBuffers: false,
+        fragDepth: false,
+        shaderTextureLOD: false
+      },
       fragmentShader,
-      transparent: true,
       uniforms: {
         cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
         cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
@@ -53,9 +58,13 @@ const App: React.FC = () => {
 
   return (
     <React.Suspense key={Math.random()} fallback={null}>
-      <OrbitControls autoRotateSpeed={0.3} enableDamping />
+      <OrbitControls
+        autoRotateSpeed={0.3}
+        enableDamping
+        maxPolarAngle={Math.PI / 2.1}
+      />
 
-      <mesh {...{ ref }}>
+      <mesh frustumCulled={false} {...{ ref }}>
         <planeBufferGeometry args={[2, 2]} />
         <rawShaderMaterial {...data} />
       </mesh>

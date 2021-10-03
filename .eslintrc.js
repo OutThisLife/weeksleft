@@ -34,7 +34,7 @@ const init = (
       }
     },
     {
-      files: ['./*.ts'],
+      files: ['./*.ts', './plugins/**/*.ts'],
       rules: {
         'import/no-extraneous-dependencies': 0
       }

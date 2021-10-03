@@ -146,8 +146,8 @@ float sdCone(vec3 p, vec2 c) {
   return dot(c, vec2(q, p.z));
 }
 
-float checkerboard(vec3 p) {
-  return mod(floor(5. * p.z) + floor(5. * p.x), 2.);
+float checkers(vec3 p, float s) {
+  return mod(floor(s * p.z) + floor(s * p.x), 2.);
 }
 
 vec2 iBox(vec3 ro, vec3 rd, vec3 rad) {

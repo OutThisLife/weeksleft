@@ -3,7 +3,6 @@ module.exports = {
   bracketSpacing: true,
   endOfLine: 'auto',
   jsxBracketSameLine: true,
-  parser: 'typescript',
   printWidth: 80,
   semi: false,
   singleQuote: true,
