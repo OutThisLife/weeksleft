@@ -45,11 +45,12 @@ vec2 sceneSDF(vec3 p, float s) {
 
     float d = sdOctahedron(q, .2 * s);
 
-    float disp = clamp((abs((opCheapBend((2. + 1. * sin(iTime * .2)) * q).x *
-                             opCheapBend((2. + 1. * sin(iTime * .2)) * q).x))),
-                       0., 0.1);
+    // float disp = clamp((abs((opCheapBend((2. + 1. * sin(iTime * .2)) * q).x *
+    //                          opCheapBend((2. + 1. * sin(iTime * .2)) *
+    //                          q).x))),
+    //                    0., 0.1);
 
-    d = sdOctahedron(q, .3 + disp);
+    // d = sdOctahedron(q, .3 + disp);
 
     res = opU(res, vec2(d, 3.));
   }
@@ -116,7 +117,7 @@ void render(vec3 ro, vec3 rd, inout vec3 col) {
 
     lin *= clamp(.5 + .5 * nor.y, 0., 1.);
 
-    reflectionRay(p + ro * EPSILON, ref, col);
+    // reflectionRay(p + ro * EPSILON, ref, col);
   } else if (m == 1.) {
     lin += vec3(.9);
     lin += .8 * calcSoftshadow(p, lig, 0.02, 2.5, 1.);
