@@ -38,7 +38,7 @@ vec2 sceneSDF(vec3 p, float s);
 const vec3 palette[] =
     vec3[](vec3(.7, .8, .9),  // Sky
            vec3(1.),          // Floor
-           vec3(0.0001, 0., 0.001), vec3(0.0001, 0., 0.001), vec3(#f36));
+           vec3(0.0001, 0., 0.001), vec3(0.0001, 0., 0.001), vec3(1.));
 
 vec2 sceneSDF(vec3 p, float s) {
   vec2 res = vec2(sdPlane(p, vec3(0., 1., 0.), 0.), 1.);
@@ -85,11 +85,20 @@ vec2 sceneSDF(vec3 p, float s) {
     q.xy = rotate(q.xy, 5.);
 
     float d1 = sdSphere(q, 1. * s);
-    float d2 = sdSphere(q - vec3(0., .3, 0.), 1. * s);
+    float d2 = sdSphere(q - vec3(0., .3, 0.), 1.1 * s);
 
     float d = opExtrusion(q, d2, d1);
 
     res = opU(res, vec2(d, 4.));
+  }
+
+  {
+    vec3 q = p - vec3(0., 2., 2.);
+    q = rotate(q, vec3(0., 1., 1.), 1.);
+
+    float d = sdBox(q, vec3(1.) * s);
+
+    res = opU(res, vec2(d, 3.));
   }
 
   return res;
@@ -155,7 +164,7 @@ void reflectionRay(vec3 ro, vec3 rd, inout vec3 col) {
   if (m > 1. && t >= EPSILON && t < MAX_DIST) {
     vec3 p = ro + (t * rd);
 
-    col = mix(col, getColor(p, ro, rd, -1), .05);
+    col = mix(col, getColor(p, ro, rd, -1), .1);
   }
 }
 
@@ -184,13 +193,13 @@ void main() {
   col = mix(col, vec3(0.), 1. - exp2(-EPSILON * pow(t, 2.5)));
 
   if (t >= MAX_DIST) {
-    vec2 st = ndc.xy / tan(ndc.y - ndc.z);
+    vec2 st = ndc.xy / sin(ndc.y - ndc.z);
     vec2 dots = fract(100. * st) - .5;
 
     float r = 1. - .264 * sin(50. * distance(dots, ndc.yx) + (iTime * 1.5));
     float d = smoothstep(r - r * .08, r, length(dots));
 
-    col = vec3(1.) * d;
+    col = vec3(#FFE1CC) * d;
   }
 
   fragColor = vec4(pow(clamp(col, 0., 1.), vec3(1. / 2.2)), 1.);
