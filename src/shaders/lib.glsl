@@ -129,30 +129,27 @@ vec3 rotate(vec3 v, vec3 axis, float angle) {
 /**
  * Materials, lighting, et al
  */
-
-vec2 castRay(vec3 ro, vec3 rd) {
-  float t = EPSILON;
+vec3 castRay(vec3 ro, vec3 rd) {
   float tmax = MAX_DIST;
+  float t = EPSILON;
   float m = -1.;
-
-  float tp = (t - ro.y) / rd.y;
-
-  if (tp > 1.) {
-    tmax = min(tmax, tp);
-  }
+  float s = 0.;
 
   for (int i = 0; i < MAX_STEPS; i++) {
-    vec2 h = sceneSDF(ro + t * rd, 1.);
+    vec2 h = sceneSDF(ro + (t * rd), 1.);
 
     if (abs(h).x <= EPSILON || t >= tmax) {
       break;
     }
 
-    m = h.y;
     t += max(EPSILON, h.x);
+    m = h.y;
+    s++;
   }
 
-  return vec2(min(tmax, t), m > tmax ? -1. : m);
+  t = min(tmax, t);
+
+  return vec3(t, t >= tmax ? -1. : m, s);
 }
 
 vec2 castSmallRay(vec3 ro, vec3 rd, float tmax) {
@@ -160,7 +157,7 @@ vec2 castSmallRay(vec3 ro, vec3 rd, float tmax) {
   float m = -1.;
 
   for (int i = 0; i < 34; i++) {
-    vec2 h = sceneSDF(ro + t * rd, 1.);
+    vec2 h = sceneSDF(ro + (t * rd), 1.);
 
     if (abs(h).x <= EPSILON || t >= tmax) {
       break;
@@ -185,9 +182,9 @@ float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
   }
 
   for (int i = 0; i < 16; i++) {
-    float h = sceneSDF(ro + rd * t, 1.).x;
+    float h = sceneSDF(ro + (t * rd), 1.).x;
 
-    if (h <= EPSILON || t >= tmax) {
+    if (abs(h) <= EPSILON || t >= tmax) {
       break;
     }
 
@@ -213,11 +210,6 @@ float calcAO(vec3 p, vec3 nor) {
   }
 
   return clamp(1. - 1.5 * occ, 0., 1.);
-}
-
-vec3 rayPlaneIntersection(vec3 ro, vec3 rd, vec4 plane) {
-  float t = -(dot(ro, plane.xyz) + plane.w) / dot(rd, plane.xyz);
-  return ro + t * rd;
 }
 
 vec3 calcNormal(vec3 p, float e) {

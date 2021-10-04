@@ -119,7 +119,7 @@ float sdBoundingBox(vec3 p, vec3 b, float e) {
       length(max(vec3(q.x, q.y, p.z), 0.)) + min(max(q.x, max(q.y, p.z)), 0.));
 }
 
-float sdPlane(vec3 p) { return p.y; }
+float sdPlane(vec3 p, vec3 n, float h) { return dot(p, n) + h; }
 
 float sdEllipsoid(vec3 p, vec3 r) {
   return (length(p / r) - 1.) * min(min(r.x, r.y), r.z);
@@ -147,7 +147,7 @@ float sdCone(vec3 p, vec2 c) {
 }
 
 float checkers(vec3 p, float s) {
-  return mod(floor(s * p.z) + floor(s * p.x), 2.);
+  return .3 + .1 * mod(floor(s * p.z) + floor(s * p.x), 2.);
 }
 
 vec2 iBox(vec3 ro, vec3 rd, vec3 rad) {

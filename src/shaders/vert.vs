@@ -1,8 +1,12 @@
-attribute vec3 position;
-attribute vec3 uv;
+#version 300 es
 
-varying vec3 vUv;
-varying vec4 vPos;
+precision mediump float;
+
+in vec3 position;
+in vec3 uv;
+
+out vec3 vUv;
+out vec4 vPos;
 
 void main() {
   vUv = uv;

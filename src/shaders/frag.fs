@@ -1,10 +1,16 @@
-precision mediump float;
+#version 300 es
+
+precision highp float;
 
 #define EPSILON 0.0005
 #define MAX_STEPS 255
 #define MIN_DIST 0.
 #define MAX_DIST 60.
 #define AA 1
+
+#define PI 3.1415926535898
+#define TWOPI 6.2831853071796
+#define LOG2 1.442695
 
 uniform float iTime;
 uniform int iFrame;
@@ -14,7 +20,9 @@ uniform vec3 cameraPosition;
 uniform mat4 cameraWorldMatrix;
 uniform mat4 cameraProjectionMatrixInverse;
 
-varying vec3 vUv;
+in vec3 vUv;
+in vec4 vPos;
+out vec4 fragColor;
 
 // ----------------------------------------------------------------------
 
@@ -27,45 +35,92 @@ vec2 sceneSDF(vec3 p, float s);
 
 // ----------------------------------------------------------------------
 
+const vec3 palette[] = vec3[](vec3(.7, .8, .9),  // Sky
+                              vec3(1.),          // Floor
+                              vec3(0.),          // Ball 1
+                              vec3(0.)           // Ball 2
+);
+
 vec2 sceneSDF(vec3 p, float s) {
-  vec2 res = vec2(sdPlane(p), 1.);
+  vec2 res = vec2(sdPlane(p, vec3(0., 1., 0.), 0.), 1.);
 
   {
-    vec3 q = p - vec3(-1., 1., 0.);
-
-    float d1 = sdBoundingBox(q, vec3(.5) * s, .03);
-    float d2 = sdSphere(q, .3 * s);
-
-    res = opU(res, vec2(d1, 2.));
-    res = opU(res, vec2(d2, 3.));
+    vec3 q = p - vec3(-1.7, 1.25, 0.);
+    float d = sdSphere(q, 1. * s);
+    res = opU(res, vec2(d, 2.));
   }
 
   {
-    vec3 q = p - vec3(0, 1., 0.);
+    vec3 q = p - vec3(1.7, 2., 0.);
+    q = rotate(q, vec3(1., 0., 0.), 1.5);
 
-    float d = sdOctahedron(q, .2 * s);
+    float d1 = opOnion(opOnion(opOnion(sdSphere(q, 1. * s), .5), .25), .15);
+    d1 = max(d1, q.y);
 
-    // float disp = clamp((abs((opCheapBend((2. + 1. * sin(iTime * .2)) * q).x *
-    //                          opCheapBend((2. + 1. * sin(iTime * .2)) *
-    //                          q).x))),
-    //                    0., 0.1);
+    q += vec3(0., 2., 0.);
+    q = rotate(q, vec3(0., 0., 1.), 3.5);
 
-    // d = sdOctahedron(q, .3 + disp);
+    float d2 =
+        opOnion(opOnion(opOnion(sdSphere(q, 1. * s), .5), .5), .01 + fbm(p.zy));
+    d2 = max(d2, q.y);
+
+    float d = opSmoothIntersection(d1, d2, .5);
 
     res = opU(res, vec2(d, 3.));
   }
 
-  {
-    vec3 q = p - vec3(1., 1., 0.);
+  return res;
+}
 
-    float d1 = sdBoundingBox(q, vec3(.5) * s, .03);
-    float d2 = sdSphere(q, .3 * s);
+vec3 getColor(vec3 p, vec3 ro, vec3 rd, int id) {
+  vec3 nor = calcNormal(p);
+  vec3 lig = normalize(vec3(.4, 1., 2.));
+  vec3 ref = reflect(rd, nor);
+  vec3 hal = normalize(lig - rd);
 
-    res = opU(res, vec2(d1, 4.));
-    res = opU(res, vec2(d2, 3.));
+  float ndotl = abs(dot(-rd, nor));
+  float rim = pow(1. - ndotl, 8.);
+
+  // lighting
+  float occ = calcAO(p, nor);                        // ambient occlusion
+  float amb = sqrt(clamp(.5 + .5 * nor.y, 0., 1.));  // ambient
+  float dif = clamp(dot(nor, lig), 0., 1.);          // diffuse
+
+  // backlight
+  float bac = clamp(dot(nor, normalize(vec3(-lig.x, 0., -lig.z))), 0., 1.) *
+              clamp(1. - nor.y, 0., 1.);
+  float dom = smoothstep(-0.1, 0.1, ref.y);               // dome light
+  float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 8.);  // fresnel
+  float spe = pow(clamp(dot(ref, hal), 0., .94), 30.);    // specular
+
+  dif *= calcSoftshadow(p, lig, 0.02, 2.5, 8.);
+
+  vec3 lin = vec3(0.);
+
+  vec3 c = id < 0 ? vec3(0.1) : palette[id];
+
+  if (id < 0) {
+    lin += .5 * dif * c;
+    lin += .5 * spe * c * dif;
+
+    return lin;
   }
 
-  return res;
+  if (id == 1) {
+    lin += 0.03 * dif * c;
+    lin += 0.01 * dom * c;
+
+    return lin;
+  }
+
+  lin += 1.30 * dif * c;
+  lin += 0.40 * amb * c * occ;
+  lin += 0.25 * fre * c * occ;
+  lin -= 0.1 * bac;
+
+  lin += refract(-rd, nor, .85) * smoothstep(0., .1, rim);
+
+  return lin;
 }
 
 void reflectionRay(vec3 ro, vec3 rd, inout vec3 col) {
@@ -73,73 +128,47 @@ void reflectionRay(vec3 ro, vec3 rd, inout vec3 col) {
   float t = res.x;
   float m = res.y;
 
-  if (m > 1.5 && t >= EPSILON) {
-    vec3 p = ro + rd * t;
+  if (m > 1. && t >= EPSILON && t < MAX_DIST) {
+    vec3 p = ro + (t * rd);
 
-    vec3 nor = calcNormal(p);
-    vec3 lig = normalize(vec3(-0.6, 0.7, -0.5));
-    vec3 ref = reflect(rd, nor);
-    vec3 hal = normalize(lig - rd);
-
-    float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 4.);  // fresnel
-    float spe = pow(clamp(dot(ref, hal), 0., .94), 16.);    // specular
-
-    vec3 lin = clamp(.5 + .5 * nor.y, 0., 1.) * vec3(0.);
-
-    lin += 2. * spe;
-    lin += 2. * fre;
-
-    col = mix(col, lin, .2);
+    col = mix(col, getColor(p, ro, rd, -1), .05);
   }
-}
-
-void render(vec3 ro, vec3 rd, inout vec3 col) {
-  vec2 res = castRay(ro, rd);
-  float t = res.x;
-  float m = res.y;
-
-  vec3 p = ro + rd * t;
-
-  vec3 nor = calcNormal(p);
-  vec3 lig = normalize(vec3(-.5, .4, -.6));
-  vec3 ref = reflect(rd, nor);
-
-  vec3 lin = vec3(0.);
-
-  if (m > 1.5) {
-    if (m == 3.) {
-      lin += vec3(.9);
-    } else if (m == 5.) {
-      lin += vec3(.1);
-    } else {
-      lin += vec3(1., 0., 0.);
-    }
-
-    lin *= clamp(.5 + .5 * nor.y, 0., 1.);
-
-    // reflectionRay(p + ro * EPSILON, ref, col);
-  } else if (m == 1.) {
-    lin += vec3(.9);
-    lin += .8 * calcSoftshadow(p, lig, 0.02, 2.5, 1.);
-    lin *= mix(vec3(.7, .8, .9), col, fbm(p.xz * 100.) - fbm(p.xz * 10.));
-  }
-
-  col = mix(col * lin, vec3(.7, .8, 1.), 1. - exp(-EPSILON * pow(t, 2.2)));
 }
 
 void main() {
   vec4 ndc = vec4(vUv.xy - vec2(.5, .33), 1., 1.);
-
   vec3 ro = cameraPosition;
-
   vec3 rd =
       normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc).xyz;
 
   vec3 col = vec3(1.);
-  render(ro, rd, col);
+  vec3 res = castRay(ro, rd);
+  float t = res.x, m = res.y;
 
-  // col = pow(col, vec3(1. / 2.2));
-  col = clamp(col, 0., 1.);
+  if (t >= EPSILON && t < MAX_DIST) {
+    vec3 p = ro + (t * rd);
+    vec3 nor = calcNormal(p);
 
-  gl_FragColor = vec4(col, 1.);
+    if (m == 1.) {
+      col = vec3(1.) * checkers(p, 5.);
+    }
+
+    col *= getColor(p, ro, rd, int(m));
+
+    reflectionRay(p + ro * EPSILON, reflect(rd, nor), col);
+  }
+
+  col = mix(col, vec3(0.), 1. - exp2(-EPSILON * pow(t, 3.)));
+
+  if (t >= MAX_DIST) {
+    vec2 st = ndc.xy / tan(ndc.y - ndc.z);
+    vec2 dots = fract(100. * st) - .5;
+
+    float r = 1. - .264 * sin(50. * distance(dots, ndc.yx) + (iTime * 1.5));
+    float d = smoothstep(r - r * .08, r, length(dots));
+
+    col = vec3(1.) * d;
+  }
+
+  fragColor = vec4(pow(clamp(col, 0., 1.), vec3(1. / 2.2)), 1.);
 }
