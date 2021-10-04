@@ -80,12 +80,12 @@ vec3 opScale(vec3 p, float s) { return (p / s) * s; }
 // Shapes
 
 float sdHeart(vec3 p, float s) {
-  mat3 m_z = mat3(cos(3.14), -sin(3.14), 0, sin(3.14), cos(3.14), 0, 0, 0, 1);
+  mat3 m_z = mat3(cos(PI), -sin(PI), 0, sin(PI), cos(PI), 0, 0, 0, 1);
 
   p = m_z * p;
 
   return sqrt(length(p) * length(p) +
-              pow(p.x * p.x + 0.1125 * p.z * p.z, .33) * p.y) -
+              pow(pow(p.x, 2.) + .1 * pow(p.z, 2.), .3) * p.y) -
          s;
 }
 

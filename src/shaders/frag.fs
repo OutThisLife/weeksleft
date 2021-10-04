@@ -35,23 +35,32 @@ vec2 sceneSDF(vec3 p, float s);
 
 // ----------------------------------------------------------------------
 
-const vec3 palette[] = vec3[](vec3(.7, .8, .9),  // Sky
-                              vec3(1.),          // Floor
-                              vec3(0.),          // Ball 1
-                              vec3(0.)           // Ball 2
-);
+const vec3 palette[] =
+    vec3[](vec3(.7, .8, .9),  // Sky
+           vec3(1.),          // Floor
+           vec3(0.0001, 0., 0.001), vec3(0.0001, 0., 0.001), vec3(#f36));
 
 vec2 sceneSDF(vec3 p, float s) {
   vec2 res = vec2(sdPlane(p, vec3(0., 1., 0.), 0.), 1.);
 
   {
-    vec3 q = p - vec3(-1.7, 1.25, 0.);
-    float d = sdSphere(q, 1. * s);
+    vec3 q = p - vec3(-1.7, 1.25, -1.);
+
+    float d1 = sdSphere(q, 1. * s);
+    float d2 = sdTriPrism(q, vec2(.5, 0.01), 3. * s);
+
+    float d = opSmoothSubtraction(d1, d2, .6);
+
+    float d3 = sdTriPrism(q, vec2(.5, 0.01), 1. * s);
+    float d4 = sdOctahedron(opRepLim(q, 2., vec3(.08, .08, 0.)), .1 * s);
+
+    d = opUnion(opExtrusion(vec3(0., 0., .04), d3, d4), d);
+
     res = opU(res, vec2(d, 2.));
   }
 
   {
-    vec3 q = p - vec3(1.7, 2., 0.);
+    vec3 q = p - vec3(2., 2., 0.);
     q = rotate(q, vec3(1., 0., 0.), 1.5);
 
     float d1 = opOnion(opOnion(opOnion(sdSphere(q, 1. * s), .5), .25), .15);
@@ -69,6 +78,20 @@ vec2 sceneSDF(vec3 p, float s) {
     res = opU(res, vec2(d, 3.));
   }
 
+  {
+    vec3 q = p - vec3(0.1, 4., -2.);
+
+    q = rotate(q, vec3(0., 0., 1.), 1.);
+    q.xy = rotate(q.xy, 5.);
+
+    float d1 = sdSphere(q, 1. * s);
+    float d2 = sdSphere(q - vec3(0., .3, 0.), 1. * s);
+
+    float d = opExtrusion(q, d2, d1);
+
+    res = opU(res, vec2(d, 4.));
+  }
+
   return res;
 }
 
@@ -79,7 +102,7 @@ vec3 getColor(vec3 p, vec3 ro, vec3 rd, int id) {
   vec3 hal = normalize(lig - rd);
 
   float ndotl = abs(dot(-rd, nor));
-  float rim = pow(1. - ndotl, 8.);
+  float rim = pow(1. - ndotl, 4.);
 
   // lighting
   float occ = calcAO(p, nor);                        // ambient occlusion
@@ -100,15 +123,16 @@ vec3 getColor(vec3 p, vec3 ro, vec3 rd, int id) {
   vec3 c = id < 0 ? vec3(0.1) : palette[id];
 
   if (id < 0) {
-    lin += .5 * dif * c;
+    lin += .25 * dif * c;
     lin += .5 * spe * c * dif;
 
     return lin;
   }
 
   if (id == 1) {
-    lin += 0.03 * dif * c;
+    lin += 0.01 * dif * c;
     lin += 0.01 * dom * c;
+    lin += 0.01 * refract(-rd, nor, .1);
 
     return lin;
   }
@@ -154,11 +178,10 @@ void main() {
     }
 
     col *= getColor(p, ro, rd, int(m));
-
     reflectionRay(p + ro * EPSILON, reflect(rd, nor), col);
   }
 
-  col = mix(col, vec3(0.), 1. - exp2(-EPSILON * pow(t, 3.)));
+  col = mix(col, vec3(0.), 1. - exp2(-EPSILON * pow(t, 2.5)));
 
   if (t >= MAX_DIST) {
     vec2 st = ndc.xy / tan(ndc.y - ndc.z);
