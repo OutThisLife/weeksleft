@@ -1,10 +1,12 @@
-precision highp float;
+#version 300 es
 
-attribute vec3 position;
-attribute vec3 uv;
+precision mediump float;
 
-varying vec3 vUv;
-varying vec4 vPos;
+in vec3 position;
+in vec3 uv;
+
+out vec3 vUv;
+out vec4 vPos;
 
 void main() {
   vUv = uv;

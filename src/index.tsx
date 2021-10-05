@@ -5,10 +5,13 @@ import * as React from 'react'
 import { render } from 'react-dom'
 import App from './app'
 import './index.css'
+import { onScreenLogging } from './util'
+
+onScreenLogging()
 
 render(
   <React.StrictMode>
-    <Canvas camera={{ position: [0, 2, 4] }} dpr={[2, 4]} linear>
+    <Canvas camera={{ position: [0, 2, 4] }}>
       <Stats />
       <App />
     </Canvas>

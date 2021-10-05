@@ -1,8 +1,16 @@
+#version 300 es
+
 precision highp float;
 
-#ifdef GL_OES_standard_derivatives
-#extension GL_OES_standard_derivatives : enable
-#endif
+#define EPSILON 0.0005
+#define MAX_STEPS 255
+#define MIN_DIST 0.
+#define MAX_DIST 60.
+#define AA 1
+
+#define PI 3.1415926535898
+#define TWOPI 6.2831853071796
+#define LOG2 1.442695
 
 uniform float iTime;
 uniform int iFrame;
@@ -12,12 +20,13 @@ uniform vec3 cameraPosition;
 uniform mat4 cameraWorldMatrix;
 uniform mat4 cameraProjectionMatrixInverse;
 
-varying vec3 vUv;
+in vec3 vUv;
+in vec4 vPos;
+out vec4 fragColor;
 
 // ----------------------------------------------------------------------
 
-const vec3 primary = vec3(1., .2, .4);
-vec4 map(vec3 p, float s);
+vec2 sceneSDF(vec3 p, float s);
 
 // clang-format off
 #pragma glslify: import './lib.glsl'
@@ -26,122 +35,172 @@ vec4 map(vec3 p, float s);
 
 // ----------------------------------------------------------------------
 
-vec4 map(vec3 p, float s) {
-  vec4 res = vec4(1.);
+const vec3 palette[] =
+    vec3[](vec3(.7, .8, .9),  // Sky
+           vec3(1.),          // Floor
+           vec3(0.0001, 0., 0.001), vec3(0.0001, 0., 0.001), vec3(1.));
+
+vec2 sceneSDF(vec3 p, float s) {
+  vec2 res = vec2(sdPlane(p, vec3(0., 1., 0.), 0.), 1.);
 
   {
-    float d = sdSphere(p - vec3(-.4, .5, 0.), .25 * s);
+    vec3 q = p - vec3(-1.7, 1.25, -1.);
 
-    res = opU(res, vec4(d, vec3(0., 0., 1.)));
+    float d1 = sdSphere(q, 1. * s);
+    float d2 = sdTriPrism(q, vec2(.5, 0.01), 3. * s);
+
+    float d = opSmoothSubtraction(d1, d2, .6);
+
+    float d3 = sdTriPrism(q, vec2(.5, 0.01), 1. * s);
+    float d4 = sdOctahedron(opRepLim(q, 2., vec3(.08, .08, 0.)), .1 * s);
+
+    d = opUnion(opExtrusion(vec3(0., 0., .04), d3, d4), d);
+
+    res = opU(res, vec2(d, 2.));
   }
 
   {
-    float d = sdHeart(p - vec3(.4, .5, 0.), .25 * s);
+    vec3 q = p - vec3(2., 2., 0.);
+    q = rotate(q, vec3(1., 0., 0.), 1.5);
 
-    res = opU(res, vec4(d, vec3(0., 1., 0.)));
+    float d1 = opOnion(opOnion(opOnion(sdSphere(q, 1. * s), .5), .25), .15);
+    d1 = max(d1, q.y);
+
+    q += vec3(0., 2., 0.);
+    q = rotate(q, vec3(0., 0., 1.), 3.5);
+
+    float d2 =
+        opOnion(opOnion(opOnion(sdSphere(q, 1. * s), .5), .5), .01 + fbm(p.zy));
+    d2 = max(d2, q.y);
+
+    float d = opSmoothIntersection(d1, d2, .5);
+
+    res = opU(res, vec2(d, 3.));
+  }
+
+  {
+    vec3 q = p - vec3(0.1, 4., -2.);
+
+    q = rotate(q, vec3(0., 0., 1.), 1.);
+    q.xy = rotate(q.xy, 5.);
+
+    float d1 = sdSphere(q, 1. * s);
+    float d2 = sdSphere(q - vec3(0., .3, 0.), 1.1 * s);
+
+    float d = opExtrusion(q, d2, d1);
+
+    res = opU(res, vec2(d, 4.));
+  }
+
+  {
+    vec3 q = p - vec3(0., 2., 2.);
+    q = rotate(q, vec3(0., 1., 1.), 1.);
+
+    float d = sdBox(q, vec3(1.) * s);
+
+    res = opU(res, vec2(d, 3.));
   }
 
   return res;
 }
 
-void inverseRender(vec3 ro, vec3 rd, inout vec4 col) {
-  float t = 0.;
-  float tmax = 20.;
+vec3 getColor(vec3 p, vec3 ro, vec3 rd, int id) {
+  vec3 nor = calcNormal(p);
+  vec3 lig = normalize(vec3(.4, 1., 2.));
+  vec3 ref = reflect(rd, nor);
+  vec3 hal = normalize(lig - rd);
 
-  for (int i = 0; i < 64; i++) {
-    vec3 p = (ro + t * rd);
-    vec4 h = map(p, (0.3 + (.1 * sin(iTime)) + .2));
+  float ndotl = abs(dot(-rd, nor));
+  float rim = pow(1. - ndotl, 4.);
 
-    if (abs(h).x < (0.0005 * t) || t >= tmax) {
-      if (t < tmax) {
-        vec3 nor = calcNormal(p);
-        float ndotl = abs(dot(-rd, nor));
-        float rim = pow(1. - ndotl, 3.);
+  // lighting
+  float occ = calcAO(p, nor);                        // ambient occlusion
+  float amb = sqrt(clamp(.5 + .5 * nor.y, 0., 1.));  // ambient
+  float dif = clamp(dot(nor, lig), 0., 1.);          // diffuse
 
-        col = vec4(mix(refract(nor, rd, .85), vec3(1.), rim), 1.);
-      }
+  // backlight
+  float bac = clamp(dot(nor, normalize(vec3(-lig.x, 0., -lig.z))), 0., 1.) *
+              clamp(1. - nor.y, 0., 1.);
+  float dom = smoothstep(-0.1, 0.1, ref.y);               // dome light
+  float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 8.);  // fresnel
+  float spe = pow(clamp(dot(ref, hal), 0., .94), 30.);    // specular
 
-      break;
-    }
+  dif *= calcSoftshadow(p, lig, 0.02, 2.5, 8.);
 
-    t += h.x;
+  vec3 lin = vec3(0.);
+
+  vec3 c = id < 0 ? vec3(0.1) : palette[id];
+
+  if (id < 0) {
+    lin += .25 * dif * c;
+    lin += .5 * spe * c * dif;
+
+    return lin;
   }
+
+  if (id == 1) {
+    lin += 0.01 * dif * c;
+    lin += 0.01 * dom * c;
+    lin += 0.01 * refract(-rd, nor, .1);
+
+    return lin;
+  }
+
+  lin += 1.30 * dif * c;
+  lin += 0.40 * amb * c * occ;
+  lin += 0.25 * fre * c * occ;
+  lin -= 0.1 * bac;
+
+  lin += refract(-rd, nor, .85) * smoothstep(0., .1, rim);
+
+  return lin;
 }
 
-void render(vec3 ro, vec3 rd, inout vec4 col) {
-  float t = 0.;
-  float tmax = 20.;
+void reflectionRay(vec3 ro, vec3 rd, inout vec3 col) {
+  vec2 res = castSmallRay(ro, rd, 20.);
+  float t = res.x;
+  float m = res.y;
 
-  float tp1 = (0. - ro.y) / rd.y;
+  if (m > 1. && t >= EPSILON && t < MAX_DIST) {
+    vec3 p = ro + (t * rd);
 
-  if (tp1 > 0.) {
-    tmax = min(tmax, tp1);
-  }
-
-  for (int i = 0; i < 255; i++) {
-    if (t >= tmax) {
-      break;
-    }
-
-    vec3 p = ro + t * rd;
-    vec4 h = map(p, 1.);
-
-    if (abs(h).x < (0.0005 * t)) {
-      vec3 nor = calcNormal(p);
-      vec3 lig = normalize(vec3(.9, .4, -.4));
-      vec3 ref = reflect(rd, nor);
-      vec3 hal = normalize(lig - rd);
-
-      float ndotl = abs(dot(-rd, nor));
-      float rim = pow(1. - ndotl, 4.);
-
-      float occ = calcAO(p, nor);                        // ambient occlusion
-      float amb = sqrt(clamp(.5 + .5 * nor.y, 0., 1.));  // ambient
-      float dif = clamp(dot(nor, lig), 0., 1.);          // diffuse
-
-      float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 4.);  // fresnel
-      float spe = pow(clamp(dot(ref, hal), 0., .94), 16.);    // specular
-
-      vec3 lin = vec3(.9);
-
-      dif *= calcSoftshadow(p, lig, .02, 2.5, 8.);
-
-      lin *= mix(lin, nor, rim) + rim;
-      lin += 1.3 * dif;
-      lin += 2. * spe * dif;
-      lin += 2. * fre * dif;
-      lin += .4 * amb * occ;
-
-      col *= vec4(lin, 1.);
-      inverseRender(p, refract(rd, nor, .9), col);
-
-      break;
-    }
-
-    t += h.x;
-  }
-
-  if (t >= tmax) {
-    vec3 p = vec3(0., 1., 0.);
-    vec3 planePoint = rayPlaneIntersection(ro, rd, vec4(p, 0.));
-
-    col.xyz *= mix(.9, .98, calcSoftshadow(planePoint, p, .02, 3., 7.));
+    col = mix(col, getColor(p, ro, rd, -1), .1);
   }
 }
 
 void main() {
   vec4 ndc = vec4(vUv.xy - vec2(.5, .33), 1., 1.);
-
-  vec3 ro =
-      vec3(cameraPosition.x, max(0.1, cameraPosition.y), cameraPosition.z);
-
+  vec3 ro = cameraPosition;
   vec3 rd =
       normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc).xyz;
 
-  vec4 col = vec4(1.);
-  render(ro, rd, col);
+  vec3 col = vec3(1.);
+  vec3 res = castRay(ro, rd);
+  float t = res.x, m = res.y;
 
-  col *= pow(col, vec4(.4545));
+  if (t >= EPSILON && t < MAX_DIST) {
+    vec3 p = ro + (t * rd);
+    vec3 nor = calcNormal(p);
 
-  gl_FragColor = clamp(col, 0., 1.);
+    if (m == 1.) {
+      col = vec3(1.) * checkers(p, 5.);
+    }
+
+    col *= getColor(p, ro, rd, int(m));
+    reflectionRay(p + ro * EPSILON, reflect(rd, nor), col);
+  }
+
+  col = mix(col, vec3(0.), 1. - exp2(-EPSILON * pow(t, 2.5)));
+
+  if (t >= MAX_DIST) {
+    vec2 st = ndc.xy / sin(ndc.y - ndc.z);
+    vec2 dots = fract(100. * st) - .5;
+
+    float r = 1. - .264 * sin(50. * distance(dots, ndc.yx) + (iTime * 1.5));
+    float d = smoothstep(r - r * .08, r, length(dots));
+
+    col = vec3(#FFE1CC) * d;
+  }
+
+  fragColor = vec4(pow(clamp(col, 0., 1.), vec3(1. / 2.2)), 1.);
 }

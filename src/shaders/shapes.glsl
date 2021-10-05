@@ -1,14 +1,16 @@
 // https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
 
-vec4 opU(vec4 d1, vec4 d2) { return (d1.x < d2.x) ? d1 : d2; }
 vec2 opU(vec2 d1, vec2 d2) { return (d1.x < d2.x) ? d1 : d2; }
+vec4 opU(vec4 d1, vec4 d2) { return (d1.x < d2.x) ? d1 : d2; }
 
 vec3 opRep(vec3 p, float s) { return mod(p + s * .5, s) - s * .5; }
 
+vec3 opRepLim(vec3 p, float s, vec3 l) {
+  return p - s * clamp(floor(p / s) + .5, -l, l);
+}
+
 float opUnion(float d1, float d2) { return min(d1, d2); }
-
 float opSubtraction(float d1, float d2) { return max(-d1, d2); }
-
 float opIntersection(float d1, float d2) { return max(d1, d2); }
 
 float opSmoothUnion(float d1, float d2, float k) {
@@ -26,18 +28,64 @@ float opSmoothIntersection(float d1, float d2, float k) {
   return mix(d2, d1, h) + k * h * (1. - h);
 }
 
+float opOnion(float d, float s) { return abs(d) - s; }
+
+float opDisplace(float d1, float d2, float d) { return d1 + (d2 + d); }
+
+float opExtrusion(vec3 p, float d, float h) {
+  vec2 w = vec2(d, abs(p.z) - h);
+  return min(max(w.x, w.y), 0.) + length(max(w, 0.));
+}
+
+vec2 opRevolution(vec3 p, float o) { return vec2(length(p.xz) - o, p.y); }
+
 float smin(float a, float b, float k) {
   float res = exp(-k * a) + exp(-k * b);
   return -log(res) / k;
 }
 
+vec3 opCheapBend(vec3 p) {
+  const float k = 10.0;
+  float c = cos(k * p.x);
+  float s = sin(k * p.x);
+  mat2 m = mat2(c, -s, s, c);
+
+  return vec3(m * p.xy, p.z);
+}
+
+vec3 opTwist(vec3 p, const float k) {
+  float c = cos(k * p.y);
+  float s = sin(k * p.y);
+  mat2 m = mat2(c, -s, s, c);
+
+  return vec3(m * p.xz, p.y);
+}
+
+vec3 opSymX(vec3 p) {
+  p.x = abs(p.x);
+  return p;
+}
+
+vec3 opSymXZ(vec3 p) {
+  p.xz = abs(p.xz);
+  return p;
+}
+
+float invert(float m) { return 1. / m; }
+
+vec3 opTx(vec3 p, mat4 m) { return (vec4(p, 1.) * m).xyz; }
+
+vec3 opScale(vec3 p, float s) { return (p / s) * s; }
+
+// Shapes
+
 float sdHeart(vec3 p, float s) {
-  mat3 m_z = mat3(cos(3.14), -sin(3.14), 0, sin(3.14), cos(3.14), 0, 0, 0, 1);
+  mat3 m_z = mat3(cos(PI), -sin(PI), 0, sin(PI), cos(PI), 0, 0, 0, 1);
 
   p = m_z * p;
 
   return sqrt(length(p) * length(p) +
-              pow(p.x * p.x + 0.1125 * p.z * p.z, .33) * p.y) -
+              pow(pow(p.x, 2.) + .1 * pow(p.z, 2.), .3) * p.y) -
          s;
 }
 
@@ -48,6 +96,11 @@ float sdBox(vec3 p, vec3 b, float r) {
   return min(max(d.x, max(d.y, d.z)), 0.) + length(max(d, 0.)) - r;
 }
 
+float sdBox(vec3 p, vec3 b) {
+  vec3 d = abs(p) - b;
+  return length(max(d, 0.)) + min(max(d.x, max(d.y, d.z)), 0.);
+}
+
 float sdTorus(vec3 p, vec2 t) {
   vec2 q = vec2(length(p.xz) - t.x, p.y);
   return length(q) - t.y;
@@ -55,6 +108,7 @@ float sdTorus(vec3 p, vec2 t) {
 
 float sdBoundingBox(vec3 p, vec3 b, float e) {
   p = abs(p) - b;
+
   vec3 q = abs(p + e) - e;
 
   return min(
@@ -65,9 +119,9 @@ float sdBoundingBox(vec3 p, vec3 b, float e) {
       length(max(vec3(q.x, q.y, p.z), 0.)) + min(max(q.x, max(q.y, p.z)), 0.));
 }
 
-float sdPlane(vec3 p) { return p.y; }
+float sdPlane(vec3 p, vec3 n, float h) { return dot(p, n) + h; }
 
-float sdEllipsoid(in vec3 p, in vec3 r) {
+float sdEllipsoid(vec3 p, vec3 r) {
   return (length(p / r) - 1.) * min(min(r.x, r.y), r.z);
 }
 
@@ -92,7 +146,11 @@ float sdCone(vec3 p, vec2 c) {
   return dot(c, vec2(q, p.z));
 }
 
-vec2 iBox(in vec3 ro, in vec3 rd, in vec3 rad) {
+float checkers(vec3 p, float s) {
+  return .3 + .1 * mod(floor(s * p.z) + floor(s * p.x), 2.);
+}
+
+vec2 iBox(vec3 ro, vec3 rd, vec3 rad) {
   vec3 m = 1. / rd;
   vec3 n = m * ro;
   vec3 k = abs(m) * rad;
@@ -104,113 +162,11 @@ vec2 iBox(in vec3 ro, in vec3 rd, in vec3 rad) {
 
 float sdOctahedron(vec3 p, float s) {
   p = abs(p);
-  float m = p.x + p.y + p.z - s;
-  vec3 q;
-  if (3. * p.x < m) {
-    q = p.xyz;
-  } else if (3. * p.y < m) {
-    q = p.yzx;
-  } else if (3. * p.z < m) {
-    q = p.zxy;
-  } else {
-    return m * 0.57735027;
-  }
-
-  float k = clamp(.5 * (q.z - q.y + s), 0., s);
-  return length(vec3(q.x, q.y - s + k, q.z - k));
+  return (p.x + p.y + p.z - s) * .57735027;
 }
 
-float lineSegment(in vec2 p, vec2 a, vec2 b) {
+float lineSegment(vec2 p, vec2 a, vec2 b) {
   vec2 pa = p - a, ba = b - a;
   float h = clamp(dot(pa, ba) / dot(ba, ba), 0., 1.);
   return length(pa - ba * h);
-}
-
-/**
- * Materials, lighting, et al
- */
-
-vec4 castRay(vec3 ro, vec3 rd) {
-  vec4 res = vec4(-1.);
-
-  float tmin = 0.;
-  float tmax = 20.;
-  float t = tmin;
-  vec3 m = vec3(-1.);
-
-  float tp1 = (0. - ro.y) / rd.y;
-
-  if (tp1 > 0.) {
-    tmax = min(tmax, tp1);
-  }
-
-  if (t > -.5) {
-    for (int i = 0; i < 255; i++) {
-      vec4 h = map(ro + rd * t, 1.);
-
-      if (abs(h).x < (0.0005 * t) || t >= tmax) {
-        break;
-      }
-
-      t += h.x;
-      m = h.yzw;
-    }
-  }
-
-  if (t > tmax) {
-    m = vec3(-1.);
-  }
-
-  return vec4(t, m);
-}
-
-float calcAO(in vec3 pos, in vec3 nor) {
-  float occ = 0.;
-  float sca = 1.;
-
-  for (int i = 0; i < 5; i++) {
-    float hr = .01 + .12 * float(i) / 4.;
-    float dd = map(nor * hr + pos, 1.).x;
-
-    occ += -(dd - hr) * sca;
-    sca *= .95;
-  }
-
-  return clamp(1. - 3. * occ, 0., 1.);
-}
-
-float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
-  float tp = (k - ro.y) / rd.y;
-  if (tp > .0) {
-    tmax = min(tmax, tp);
-  }
-
-  float res = 1.;
-  float t = tmin;
-
-  for (int i = 0; i < 24; i++) {
-    float h = map(ro + rd * t, 1.).x;
-    float s = clamp(k * h / t, 0., 1.);
-
-    res = min(res, s * s * (3. - 2. * s));
-    t += clamp(h, .02, .2);
-
-    if (res <= 0.001 || t >= tmax) {
-      break;
-    }
-  }
-
-  return clamp(res, 0., 1.);
-}
-
-vec3 calcNormal(vec3 p) {
-  vec2 e = vec2(1.0, -1.0) * 0.5773 * 0.0005;
-
-  return normalize(e.xyy * map(p + e.xyy, 1.).x + e.yyx * map(p + e.yyx, 1.).x +
-                   e.yxy * map(p + e.yxy, 1.).x + e.xxx * map(p + e.xxx, 1.).x);
-}
-
-vec3 rayPlaneIntersection(vec3 ro, vec3 rd, vec4 plane) {
-  float t = -(dot(ro, plane.xyz) + plane.w) / dot(rd, plane.xyz);
-  return ro + t * rd;
 }

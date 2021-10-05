@@ -1,9 +1,23 @@
-* {
-  box-sizing: border-box;
-  user-select: none;
+:root {
+  --vsq: calc((1vw + 1vh) / 2);
 }
 
-html, body {
+::-webkit-scrollbar {
+  width: var(--vsq);
+  height: var(--vsq);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 1px solid #3e3e3e;
+  background: #333;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
   margin: 0;
   padding: 0;
 }
@@ -14,4 +28,9 @@ html, body {
   height: 100vh;
   overflow: hidden;
   touch-action: none;
+  background: #000;
+}
+
+canvas {
+  user-select: none;
 }

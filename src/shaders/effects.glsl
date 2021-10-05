@@ -15,9 +15,3 @@ vec3 vignette(vec2 p, float radius) {
 
   return mix(col, blendOverlay(col, noise), 0.025);
 }
-
-vec3 faceNormals(vec3 p) {
-  vec3 fdx = dFdx(p);
-  vec3 fdy = dFdy(p);
-  return normalize(cross(fdx, fdy));
-}
