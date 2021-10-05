@@ -55,7 +55,7 @@ float plot(vec2 st) {
 
       d = max(d, .5 * voronoi2d(st * sq - an));
       d = pow(d, distance(d, sin(sq * length(noise(st)) * 50. - an)));
-      d = sin(sq - an);
+      d = sin(pow(xx,2.) - an);
       d -= yy;
 
       t += (d >= 0.) ? 1. : -1.;
