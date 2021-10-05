@@ -44,7 +44,7 @@ float plot(vec2 st) {
   for (int x = 0; x < len; x++) {
     for (int y = 0; y < len; y++) {
       if (x * x + y * y > len * len) {
-        continue;
+        break;
       }
 
       float xx = st.x + float(x) * lw;
