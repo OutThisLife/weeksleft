@@ -40,7 +40,7 @@ float plot(vec2 st) {
 
   float lw = .4 * w / float(len);
   float an = iTime * 1.5;
-  float n = (fbm(st) / rand(st.yy)) * (1. - .9 * (abs(sin(an))));
+  float n = voronoi2d(st.xx) * (1. - .09 * (abs(sin(an))));
 
   for (int x = 0; x < len; x++) {
     for (int y = 0; y < len; y++) {
@@ -50,9 +50,12 @@ float plot(vec2 st) {
 
       float xx = st.x + float(x) * lw;
       float yy = st.y + float(y) * lw;
+      float sq = sqrt(pow(xx, 2.));
 
-      float d = abs(step(n + fract(10. * inversesqrt(pow(xx, 2.)) - an),
-                         fract((abs(yy / xx)) + an)));
+      float d = fract(inversesqrt(pow(yy / xx, 2.)) - an);
+
+      d = max(d, .5 * voronoi2d(st * sq - an));
+      d = pow(d, distance(d, sin(sq * length(noise(st)) * 50. - an)));
 
       d -= yy;
 
