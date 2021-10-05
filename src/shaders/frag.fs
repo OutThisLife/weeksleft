@@ -76,7 +76,7 @@ vec2 scale(vec2 p, float s) { return (p * s) - (s / 2.); }
 
 void main() {
   vec4 ndc = vec4(vUv.xy, 1., 1.);
-  vec2 st = scale(ndc.xy, 10.);
+  vec2 st = scale(ndc.xy, 10.) / iResolution.z;
 
   vec3 col = vec3(0.);
   col = mix(col, vec3(.001), grid(st, 0.01));
