@@ -32,7 +32,7 @@ float grid(vec2 p, float s) {
 }
 
 float plot(vec2 st) {
-  const int len = 13;
+  const int len = 3;
 
   float t = 0.;
   float idx = 0.;
