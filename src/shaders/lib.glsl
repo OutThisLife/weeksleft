@@ -1,3 +1,5 @@
+vec2 sceneSDF(vec3 p, float s) { return vec2(0.); }
+
 float dot2(vec2 v) { return dot(v, v); }
 float dot2(vec3 v) { return dot(v, v); }
 float ndot(vec2 a, vec2 b) { return a.x * b.x - a.y * b.y; }
@@ -49,7 +51,7 @@ float aastep(float s, float d) {
 
 float hash(float n) { return fract(sin(n) * 753.5453123); }
 
-float random(vec2 st) {
+float rand(vec2 st) {
   return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
@@ -57,10 +59,10 @@ float noise(in vec2 p) {
   vec2 i = floor(p);
   vec2 f = fract(p);
 
-  float a = random(i);
-  float b = random(i + vec2(1., 0.));
-  float c = random(i + vec2(0., 1.));
-  float d = random(i + vec2(1., 1.));
+  float a = rand(i);
+  float b = rand(i + vec2(1., 0.));
+  float c = rand(i + vec2(0., 1.));
+  float d = rand(i + vec2(1., 1.));
 
   vec2 u = f * f * (3. - 2. * f);
   return mix(a, b, u.x) + (c - a) * u.y * (1. - u.x) + (d - b) * u.x * u.y;
