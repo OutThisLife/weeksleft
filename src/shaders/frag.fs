@@ -21,7 +21,6 @@ out vec4 fragColor;
 #define PI 3.1415926535898
 #define TWOPI 6.2831853071796
 #define LOG2 1.442695
-#define w .05 / iResolution.z
 
 // clang-format off
 #pragma glslify: import './lib.glsl'
@@ -38,7 +37,7 @@ float plot(vec2 st) {
   float t = 0.;
   float idx = 0.;
 
-  float lw = .4 * w / float(len);
+  float lw = .4 * (.05 / iResolution.z) / float(len);
   float an = iTime * 1.5;
   float n = voronoi2d(st.xx) * (1. - .09 * (abs(sin(an))));
 
