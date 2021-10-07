@@ -48,9 +48,9 @@ void main() {
 
   float s = 0., fade = 1.;
   ro += iGlobalTime / 3.;
-  rd = mix(cross(rd, p), p, -.3 * intensity);
+  rd = mix(rd, p, -intensity);
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 14; i++) {
     vec3 p2 = ro + (rd * s);
     vec3 v = abs(1. - mod(p2, 2.));
     float pa, a = pa = 0.;
@@ -67,8 +67,8 @@ void main() {
       fade *= 1. - max(0., 1. - a * fbm(v.xy));
     }
 
-    col = mix(col, -col * fbm(v.xy), smoothstep(intensity, 0., pa));
     col = mix(col, vec3(s, pow(s, 2.), pow(s, 3.)), a * .0001 * fade);
+    col = mix(col, vec3(0.), smoothstep(intensity, 0., length(p)));
 
     fade *= .5;
     s += .2;
