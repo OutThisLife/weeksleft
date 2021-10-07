@@ -44,31 +44,33 @@ void main() {
 
   vec3 p = (sdPlane(ro, rd, 0.) / dot(rd, normalize(ro))) * rd + ro;
   float intensity = 1. / dot(p, p);
+  p += cross(p, rd);
 
   float s = 0., fade = 1.;
-  rd = mix(rd, p, -intensity);
+  ro += iGlobalTime / 3.;
+  rd = mix(cross(rd, p), p, -.3 * intensity);
 
-  for (int i = 0; i < 14; i++) {
+  for (int i = 0; i < 10; i++) {
     vec3 p2 = ro + (rd * s);
     vec3 v = abs(1. - mod(p2, 2.));
     float pa, a = pa = 0.;
 
     for (int n = 0; n < 10; n++) {
-      v = abs(v) / dot(v, v) - .56;
+      v = abs(v) / dot(v, v) - 1.;
       a += abs(length(v) - pa);
       pa = length(v);
     }
 
     a *= pow(a, 2.);
 
-    if (i >= 7) {
-      fade *= 1. - max(0., 1. - a * .001);
+    if (i >= 5) {
+      fade *= 1. - max(0., 1. - a * fbm(v.xy));
     }
 
-    col = mix(col, vec3(s, pow(s, 2.), pow(s, 4.)), a * .0001 * fade);
-    col = mix(col, -col, smoothstep(intensity, 0., pa));
+    col = mix(col, -col * fbm(v.xy), smoothstep(intensity, 0., pa));
+    col = mix(col, vec3(s, pow(s, 2.), pow(s, 3.)), a * .0001 * fade);
 
-    fade *= .6;
+    fade *= .5;
     s += .2;
   }
 
