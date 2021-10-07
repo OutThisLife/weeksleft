@@ -44,9 +44,6 @@ void main() {
 
   vec3 p = (sdPlane(ro, rd, 0.) / dot(rd, normalize(ro))) * rd + ro;
   float intensity = 1. / dot(p, p);
-  intensity =
-      smoothstep(-intensity / 3., intensity,
-                 (-0.05 * (intensity / fract(intensity - iGlobalTime / 2.))));
 
   float s = 0., fade = 1.;
   rd = mix(rd, p, -intensity);
