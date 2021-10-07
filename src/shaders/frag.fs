@@ -2,14 +2,17 @@
 
 precision highp float;
 
-#define EPSILON 0.0005
-#define MAX_STEPS 255
-#define MIN_DIST 0.
-#define MAX_DIST 60.
-#define AA 1
-uniform float iTime;
-uniform int iFrame;
+uniform float iGlobalTime;
+uniform float iFrame;
+uniform vec2 iMouse;
 uniform vec3 iResolution;
+
+uniform vec3 cameraPosition;
+uniform mat4 cameraWorldMatrix;
+uniform mat4 cameraProjectionMatrixInverse;
+
+#define ZERO min(0, int(iFrame))
+#define ap iResolution.x / iResolution.y;
 
 in vec3 vUv;
 in vec4 vPos;
@@ -23,64 +26,54 @@ out vec4 fragColor;
 #define LOG2 1.442695
 
 // clang-format off
-#pragma glslify: import './lib.glsl'
+#pragma glslify: import { scale } from './lib.glsl'
+#pragma glslify: import { sdPlane } from './shapes.glsl'
+#pragma glslify: import './noise.glsl'
 // clang-format on
-
-float grid(vec2 p, float s) {
-  vec2 st = fract(p);
-  return clamp(step(1. - s, st.x) + step(1. - s, st.y), 0., 1.);
-}
-
-float plot(vec2 st) {
-  const int len = 3;
-
-  float t = 0.;
-  float idx = 0.;
-
-  float lw = .4 * (.05 / iResolution.z) / float(len);
-  float an = iTime * 1.5;
-  float n = voronoi2d(st.xx) * (1. - .09 * (abs(sin(an))));
-
-  for (int x = 0; x < len; x++) {
-    for (int y = 0; y < len; y++) {
-      if (x * x + y * y > len * len) {
-        break;
-      }
-
-      float xx = st.x + float(x) * lw;
-      float yy = st.y + float(y) * lw;
-      float sq = sqrt(pow(xx, 2.));
-
-      float d = fract(inversesqrt(pow(yy / xx, 2.)) - an);
-
-      d = max(d, .5 * voronoi2d(st * sq - an));
-      d = pow(d, distance(d, sin(sq * length(noise(st)) * 50. - an)));
-      d = sin(pow(xx,2.) - an);
-      d -= yy;
-
-      t += (d >= 0.) ? 1. : -1.;
-      idx++;
-    }
-  }
-
-  if (abs(t) != idx) {
-    return clamp((abs(t) / idx) * float(len), 0., 1.);
-  }
-
-  return 0.;
-}
-
-vec2 scale(vec2 p, float s) { return (p * s) - (s / 2.); }
 
 // ----------------------------------------------------------------------
 
 void main() {
-  vec4 ndc = vec4(vUv.xy, 1., 1.);
-  vec2 st = scale(ndc.xy, 10.) / iResolution.z;
+  vec3 col;
 
-  vec3 col = vec3(0.);
-  col = mix(col, vec3(.001), grid(st, 0.01));
-  col += plot(st);
+  vec4 ndc = vec4(vUv.xy - vec2(.5), 1., 1.);
+  vec3 ro = cameraPosition;
+  vec3 mo = vec3(iMouse, ro.z);
+  vec3 rd =
+      normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc).xyz;
 
-  fragColor = vec4(pow(clamp(col, 0., 1.), vec3(.4545)), 1.);
+  vec3 p = (sdPlane(ro, rd, 0.) / dot(rd, normalize(ro))) * rd + ro;
+  float intensity = 1. / dot(p, p);
+  intensity =
+      smoothstep(-intensity / 3., intensity,
+                 (-0.05 * (intensity / fract(intensity - iGlobalTime / 2.))));
+
+  float s = 0., fade = 1.;
+  rd = mix(rd, p, -intensity);
+
+  for (int i = 0; i < 14; i++) {
+    vec3 p2 = ro + (rd * s);
+    vec3 v = abs(1. - mod(p2, 2.));
+    float pa, a = pa = 0.;
+
+    for (int n = 0; n < 10; n++) {
+      v = abs(v) / dot(v, v) - .56;
+      a += abs(length(v) - pa);
+      pa = length(v);
+    }
+
+    a *= pow(a, 2.);
+
+    if (i >= 7) {
+      fade *= 1. - max(0., 1. - a * .001);
+    }
+
+    col = mix(col, vec3(s, pow(s, 2.), pow(s, 4.)), a * .0001 * fade);
+    col = mix(col, -col, smoothstep(intensity, 0., pa));
+
+    fade *= .6;
+    s += .2;
+  }
+
+  fragColor = vec4(pow(clamp(col, 0., 1.), vec3(1. / 2.2)), 1.);
 }

@@ -11,20 +11,14 @@ const App: React.FC = () => {
 
   const data = React.useMemo<ShaderMaterialProps>(
     () => ({
-      extensions: {
-        derivatives: true,
-        drawBuffers: false,
-        fragDepth: false,
-        shaderTextureLOD: false
-      },
       fragmentShader,
       uniforms: {
         cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
         cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
         iFrame: new THREE.Uniform(1),
+        iGlobalTime: new THREE.Uniform(0),
         iMouse: new THREE.Uniform(new THREE.Vector2(0, 0)),
-        iResolution: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
-        iTime: new THREE.Uniform(0)
+        iResolution: new THREE.Uniform(new THREE.Vector3(0, 0, 1))
       },
       vertexShader
     }),
@@ -39,13 +33,15 @@ const App: React.FC = () => {
 
       if ($s instanceof THREE.RawShaderMaterial) {
         $s.uniforms.iFrame.value += 1
-        $s.uniforms.iTime.value = clock.getElapsedTime()
-        $s.uniforms.iMouse.value = new THREE.Vector2(mouse.x, mouse.y)
+        $s.uniforms.iGlobalTime.value = clock.getElapsedTime()
+        $s.uniforms.iMouse.value.copy(new THREE.Vector2(mouse.x, mouse.y))
 
-        $s.uniforms.iResolution.value = new THREE.Vector3(
-          size.width * dpr,
-          size.height * dpr,
-          dpr
+        $s.uniforms.iResolution.value.copy(
+          new THREE.Vector3(
+            Math.round(size.width * dpr),
+            Math.round(size.height * dpr),
+            dpr
+          )
         )
 
         $s.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
@@ -58,9 +54,13 @@ const App: React.FC = () => {
 
   return (
     <React.Suspense key={Math.random()} fallback={null}>
-      <OrbitControls autoRotateSpeed={0.3} maxPolarAngle={Math.PI / 2.1} />
+      <OrbitControls
+        autoRotateSpeed={0.3}
+        enableDamping
+        maxPolarAngle={Math.PI / 2.1}
+      />
 
-      <mesh frustumCulled={false} {...{ ref }}>
+      <mesh {...{ ref }}>
         <planeBufferGeometry args={[2, 2]} />
         <rawShaderMaterial {...data} />
       </mesh>

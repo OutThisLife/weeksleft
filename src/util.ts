@@ -1,6 +1,6 @@
 import { css } from 'styled-components'
 
-const { error, log } = console
+const { error } = console
 
 export const onScreenLogging = () => {
   const $log = document.createElement('div')
@@ -43,11 +43,6 @@ export const onScreenLogging = () => {
     $log.replaceChildren($f)
 
     error.apply(args)
-  }
-
-  console.log = (...args) => {
-    $log.replaceChildren(document.createDocumentFragment())
-    log.apply(args)
   }
 
   if (import.meta.hot) {

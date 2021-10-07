@@ -78,14 +78,14 @@ export default async () => {
 
           if (modules) {
             k.data = modules
-              .trim()
               .replace(/(^{\s?|\s}$)/g, '')
               .split(',')
+              .map(m => m.trim())
               .reduce((acc, m) => {
                 const rgx = new RegExp(`(.*(?<=${m})[\\s\\S]*?})`, 'gm')
-                const [, func] = rgx.exec(contents) ?? []
+                const [, ...refs] = rgx.exec(contents) ?? []
 
-                return [...acc, `${prefix}${func}`]
+                return [...acc, `${prefix}${refs.join('\n')}`]
               }, [])
               .filter(v => v)
               .join('\n')
@@ -94,6 +94,8 @@ export default async () => {
           }
         }
       } catch (err) {
+        console.error(err)
+
         if (typeof done === 'function') {
           done(err)
         }

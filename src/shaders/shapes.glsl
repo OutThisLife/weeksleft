@@ -170,3 +170,35 @@ float lineSegment(vec2 p, vec2 a, vec2 b) {
   float h = clamp(dot(pa, ba) / dot(ba, ba), 0., 1.);
   return length(pa - ba * h);
 }
+
+float plot(vec2 st, float lw) {
+  float t = 0.;
+  float idx = 0.;
+
+  const int len = 3;
+
+  for (int x = ZERO; x < len; x++) {
+    for (int y = ZERO; y < len; y++) {
+      if (x * x + y * y > len * len) {
+        break;
+      }
+
+      float xx = st.x + float(x) * lw;
+      float yy = st.y + float(y) * lw;
+      float sq = sqrt(pow(xx, 2.));
+
+      float d = fract(xx + iTime);
+      d -= yy;
+
+      t += (d >= 0.) ? 1. : -1.;
+      idx++;
+    }
+  }
+
+  return float((abs(t) != idx)) * clamp(abs(t / idx) * float(len), 0., 1.);
+}
+
+float grid(vec2 p, float s) {
+  vec2 st = fract(p);
+  return clamp(step(1. - s, st.x) + step(1. - s, st.y), 0., 1.);
+}
