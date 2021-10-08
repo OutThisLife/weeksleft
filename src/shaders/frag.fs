@@ -24,55 +24,57 @@ out vec4 fragColor;
 #define PI 3.1415926535898
 #define TWOPI 6.2831853071796
 #define LOG2 1.442695
-
-// clang-format off
-#pragma glslify: import { scale } from './lib.glsl'
-#pragma glslify: import { sdPlane } from './shapes.glsl'
-#pragma glslify: import './noise.glsl'
-// clang-format on
+#define EPSILON .001
 
 // ----------------------------------------------------------------------
 
+mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
+
 void main() {
-  vec3 col;
+  vec2 st = (-iResolution.xy + 2. * gl_FragCoord.xy) / iResolution.xy;
+  vec4 ndc = vec4(vUv.xy * 2. - 1., 1., 1.);
 
-  vec4 ndc = vec4(vUv.xy - vec2(.5), 1., 1.);
-  vec3 ro = cameraPosition;
-  vec3 mo = vec3(iMouse, ro.z);
+  vec2 mo = iMouse;
+
+  vec3 ro = 1. + .07 * cameraPosition;
   vec3 rd =
-      normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc).xyz;
+      normalize((cameraWorldMatrix * cameraProjectionMatrixInverse * ndc).xyz);
 
-  vec3 p = (sdPlane(ro, rd, 0.) / dot(rd, normalize(ro))) * rd + ro;
-  float intensity = 1. / dot(p, p);
-  p += cross(p, rd);
+  vec3 col;
+  float time = iGlobalTime * .1;
 
-  float s = 0., fade = 1.;
-  ro += iGlobalTime / 3.;
-  rd = mix(rd, p, -intensity);
+  for (int i = 0; i < 4; i++) {
+    float depth = fract(float(i + 13) + time);
 
-  for (int i = 0; i < 14; i++) {
-    vec3 p2 = ro + (rd * s);
-    vec3 v = abs(1. - mod(p2, 2.));
-    float pa, a = pa = 0.;
+    vec3 p = (ro + (float(i + 13 / 3) * rd));
+    vec3 gv = fract(abs(p)) - .5;
+    vec3 id = floor(gv);
 
-    for (int n = 0; n < 10; n++) {
-      v = abs(v) / dot(v, v) - 1.;
-      a += abs(length(v) - pa);
-      pa = length(v);
+    for (int x = -1; x <= 1; x++) {
+      for (int y = -1; y <= 1; y++) {
+        vec3 uv = (gv - vec3(x, y, 0));
+
+        float d = length(uv) - .1;
+        d += d * (.03 / (dot(cross(gv, uv), gv) - dot(uv, uv)));
+
+        float m = .013 / d;
+        m += abs(.004 / d);
+        m *= smoothstep(.8, .1, d);
+
+        vec3 nor = normalize(uv - vec3(x, y, 0.));
+        float dif = clamp(dot(nor, uv), 0., 1.);
+        float amb = clamp(.5 + .5 * nor.y, 0., 1.);
+
+        vec3 lin;
+        lin += 1.5 * dif * vec3(.7);
+        lin += 10. * amb * vec3(.1, 0., .9);
+
+        col += lin * pow(m, 2.);
+      }
     }
-
-    a *= pow(a, 2.);
-
-    if (i >= 5) {
-      fade *= 1. - max(0., 1. - a * fbm(v.xy));
-    }
-
-    col = mix(col, vec3(s, pow(s, 2.), pow(s, 3.)), a * .0001 * fade);
-    col = mix(col, vec3(0.), smoothstep(intensity, 0., length(p)));
-
-    fade *= .5;
-    s += .2;
   }
+
+  // col = mix(col, vec3(1., 0., 0.), s / 64.);
 
   fragColor = vec4(pow(clamp(col, 0., 1.), vec3(1. / 2.2)), 1.);
 }

@@ -25,38 +25,42 @@ const App: React.FC = () => {
     []
   )
 
-  useFrame(({ camera, clock, mouse, size, viewport: { dpr } }) => {
-    const $m = ref.current as THREE.Mesh
+  let i = 0
 
-    if ($m instanceof THREE.Mesh) {
-      const $s = $m.material
+  useFrame(
+    ({ camera, clock, mouse, size: { height, width }, viewport: { dpr } }) => {
+      const $m = ref.current as THREE.Mesh
 
-      if ($s instanceof THREE.RawShaderMaterial) {
-        $s.uniforms.iFrame.value += 1
-        $s.uniforms.iGlobalTime.value = clock.getElapsedTime()
-        $s.uniforms.iMouse.value.copy(new THREE.Vector2(mouse.x, mouse.y))
+      if (!i) {
+        i++
+      }
 
-        $s.uniforms.iResolution.value.copy(
-          new THREE.Vector3(
-            Math.round(size.width * dpr),
-            Math.round(size.height * dpr),
-            dpr
+      if ($m instanceof THREE.Mesh) {
+        const $s = $m.material
+
+        if ($s instanceof THREE.RawShaderMaterial) {
+          $s.uniforms.iFrame.value += 1
+          $s.uniforms.iGlobalTime.value = clock.getElapsedTime()
+          $s.uniforms.iMouse.value.copy(mouse)
+
+          $s.uniforms.iResolution.value.copy(
+            new THREE.Vector3(width * dpr, height * dpr, dpr)
           )
-        )
 
-        $s.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
-        $s.uniforms.cameraProjectionMatrixInverse.value.copy(
-          camera.projectionMatrixInverse
-        )
+          $s.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
+          $s.uniforms.cameraProjectionMatrixInverse.value.copy(
+            camera.projectionMatrixInverse
+          )
+        }
       }
     }
-  })
+  )
 
   return (
     <React.Suspense key={Math.random()} fallback={null}>
       <OrbitControls enableDamping />
 
-      <mesh {...{ ref }}>
+      <mesh frustumCulled={false} {...{ ref }}>
         <planeBufferGeometry args={[2, 2]} />
         <rawShaderMaterial {...data} />
       </mesh>

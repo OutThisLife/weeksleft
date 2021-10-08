@@ -11,6 +11,13 @@ vec3 hash(vec3 p) {
       43758.5453);
 }
 
+float hash21(vec3 p) {
+  p = fract(p * vec3(123.34, 456.21, p.z));
+  p += dot(p, p + 45.32);
+
+  return fract(p.x * p.y * p.z);
+}
+
 vec2 rhash(vec2 uv) {
   uv *= myt;
   uv *= mys;
