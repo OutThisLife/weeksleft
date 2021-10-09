@@ -6,44 +6,46 @@ uniform float iGlobalTime;
 uniform float iFrame;
 uniform vec2 iMouse;
 uniform vec3 iResolution;
-
-uniform vec3 cameraPosition;
 uniform mat4 cameraWorldMatrix;
+uniform mat4 cameraProjectionMatrix;
 uniform mat4 cameraProjectionMatrixInverse;
-
-#define ZERO min(0, int(iFrame))
-#define ap iResolution.x / iResolution.y;
 
 in vec3 vUv;
 in vec4 vPos;
+in vec4 vWorld;
+in vec3 cPos;
 
 out vec4 fragColor;
 
-// ----------------------------------------------------------------------
-
+#define ZERO min(0, int(iFrame))
 #define PI 3.1415926535898
 #define TWOPI 6.2831853071796
 #define LOG2 1.442695
-#define EPSILON .001
 
 // ----------------------------------------------------------------------
 
-mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
-
 void main() {
-  vec2 st = (-iResolution.xy + 2. * gl_FragCoord.xy) / iResolution.xy;
-  vec4 ndc = vec4(vUv.xy * 2. - 1., 1., 1.);
+  vec4 ndc = vec4(vUv.xyz, 1.) * 2. - 1.;
 
   vec2 mo = iMouse;
+  vec3 ro = cPos;
+  vec4 rd = normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc);
+  float w = atan(rd.w, vPos.w / 4.);
+  ndc /= w;
+  mo /= w;
 
-  vec3 ro = cameraPosition;
-  vec4 idk = normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc);
-  vec3 rd = idk.xyz / idk.w;
+  ndc *= 4.;
+  mo *= 4.;
 
   vec3 col;
-  float time = iGlobalTime * .1;
+  vec2 gv = fract(ndc.xy) - .5;
+  vec2 id = floor(gv);
+  float d = clamp(step(0., .3 - length(gv)), 0., 1.);
+  float dist = step(0., .3 - distance(ndc.xy, mo));
 
-  col = fract(rd) - .5;
+  col += vec3(.5) * d;
+
+  col = mix(col, vec3(1., 0., 0.), (d * dist));
 
   fragColor = vec4(pow(clamp(col, 0., 1.), vec3(1. / 2.2)), 1.);
 }

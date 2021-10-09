@@ -13,6 +13,7 @@ const App: React.FC = () => {
     () => ({
       fragmentShader,
       uniforms: {
+        cameraProjectionMatrix: new THREE.Uniform(new THREE.Matrix4()),
         cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
         cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
         iFrame: new THREE.Uniform(1),
@@ -39,15 +40,18 @@ const App: React.FC = () => {
         const $s = $m.material
 
         if ($s instanceof THREE.RawShaderMaterial) {
+          const w = width * dpr
+          const h = height * dpr
+
           $s.uniforms.iFrame.value += 1
           $s.uniforms.iGlobalTime.value = clock.getElapsedTime()
           $s.uniforms.iMouse.value.copy(mouse)
-
-          $s.uniforms.iResolution.value.copy(
-            new THREE.Vector3(width * dpr, height * dpr, dpr)
-          )
+          $s.uniforms.iResolution.value.copy(new THREE.Vector3(w, h, w / h))
 
           $s.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
+
+          $s.uniforms.cameraProjectionMatrix.value.copy(camera.projectionMatrix)
+
           $s.uniforms.cameraProjectionMatrixInverse.value.copy(
             camera.projectionMatrixInverse
           )
@@ -60,7 +64,7 @@ const App: React.FC = () => {
     <React.Suspense key={Math.random()} fallback={null}>
       <OrbitControls enableDamping />
 
-      <mesh frustumCulled={false} {...{ ref }}>
+      <mesh {...{ ref }}>
         <planeBufferGeometry args={[2, 2]} />
         <rawShaderMaterial {...data} />
       </mesh>

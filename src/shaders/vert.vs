@@ -1,21 +1,22 @@
 #version 300 es
 
-precision mediump float;
-
 uniform mat4 projectionMatrix;
 uniform mat4 modelViewMatrix;
-uniform mat3 normalMatrix;
+uniform vec3 cameraPosition;
 
 in vec3 uv;
-in vec3 normal;
 in vec4 position;
 
 out vec3 vUv;
+out vec4 vWorld;
 out vec4 vPos;
+out vec3 cPos;
 
 void main() {
   vUv = uv;
+  vWorld = position;
   vPos = projectionMatrix * modelViewMatrix * position;
+  cPos = cameraPosition;
 
-  gl_Position = position;
+  gl_Position = vWorld;
 }
