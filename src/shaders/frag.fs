@@ -34,7 +34,6 @@ void main() {
 
   vec3 ro = cPos;
   vec4 rd = normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc);
-
   float w = atan(rd.w, vPos.w / scale);
   ndc /= w;
   mo /= w;
