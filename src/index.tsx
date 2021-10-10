@@ -8,7 +8,7 @@ import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas camera={{ position: [0, 0, 1] }} dpr={[2, 4]}>
+    <Canvas camera={{ fov: 30, position: [0, 0, 10] }} dpr={[2, 4]}>
       <Stats />
       <App />
     </Canvas>

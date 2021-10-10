@@ -5,18 +5,18 @@ vec3 blendOverlay(vec3 base, vec3 blend) {
 
 vec3 vignette(vec2 p, float radius) {
   p /= radius;
-  p -= vec2(-0.1, -0.1);
+  p -= vec2(-.1);
 
   float dist = length(p);
   dist = smoothstep(-.33, .99, 1. - dist);
 
-  vec3 col = mix(vec3(0.33), vec3(1.), dist);
-  vec3 noise = vec3(random(p * 1.5), random(p * 2.5), random(p));
+  vec3 col = mix(vec3(.33), vec3(1.), dist);
+  vec3 noise = vec3(rand(p * 1.5), rand(p * 2.5), rand(p));
 
-  return mix(col, blendOverlay(col, noise), 0.025);
+  return mix(col, blendOverlay(col, noise), .025);
 }
 
-vec3 getColor(vec3 p, vec3 ro, vec3 rd, int id) {
+void getColor(vec3 p, vec3 ro, vec3 rd) {
   vec3 nor = calcNormal(p);
   vec3 lig = normalize(vec3(.4, 1., 2.));
   vec3 ref = reflect(rd, nor);
@@ -36,34 +36,4 @@ vec3 getColor(vec3 p, vec3 ro, vec3 rd, int id) {
   float dom = smoothstep(-0.1, 0.1, ref.y);               // dome light
   float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 8.);  // fresnel
   float spe = pow(clamp(dot(ref, hal), 0., .94), 30.);    // specular
-
-  vec3 c = id < 0 ? vec3(0.1) : palette[id];
-  vec3 lin = vec3(0.);
-
-  lin = vec3(1., 0., 1.) * smoothstep(0., 1., ref.y);
-
-  if (id < 0) {
-    lin += .25 * dif * c;
-    lin += .5 * spe * c * dif;
-
-    return lin;
-  }
-  -(f1(x, t) * f2(x, t))
-
-      if (id == 1) {
-    lin += 0.01 * dif * c;
-    lin += 0.01 * dom * c;
-    lin += 0.01 * refract(-rd, nor, .1);
-
-    return lin;
-  }
-
-  lin += 1.30 * dif * c;
-  lin += 0.40 * amb * c * occ;
-  lin += 0.25 * fre * c * occ;
-  lin -= 0.1 * bac;
-
-  // lin += refract(-rd, nor, .85) * smoothstep(0., .1, rim);
-
-  return lin;
 }

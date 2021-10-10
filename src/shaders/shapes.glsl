@@ -14,17 +14,17 @@ float opSubtraction(float d1, float d2) { return max(-d1, d2); }
 float opIntersection(float d1, float d2) { return max(d1, d2); }
 
 float opSmoothUnion(float d1, float d2, float k) {
-  float h = clamp(.5 + .5 * (d2 - d1) / k, 0., 1.);
+  float h = saturate(.5 + .5 * (d2 - d1) / k);
   return mix(d2, d1, h) - k * h * (1. - h);
 }
 
 float opSmoothSubtraction(float d1, float d2, float k) {
-  float h = clamp(.5 - .5 * (d2 + d1) / k, 0., 1.);
+  float h = saturate(.5 - .5 * (d2 + d1) / k);
   return mix(d2, -d1, h) + k * h * (1. - h);
 }
 
 float opSmoothIntersection(float d1, float d2, float k) {
-  float h = clamp(.5 - .5 * (d2 - d1) / k, 0., 1.);
+  float h = saturate(.5 - .5 * (d2 - d1) / k);
   return mix(d2, d1, h) + k * h * (1. - h);
 }
 
@@ -132,7 +132,7 @@ float sdTriPrism(vec3 p, vec2 h, float r) {
 
 float sdCapsule(vec3 p, vec3 a, vec3 b, float r) {
   vec3 pa = p - a, ba = b - a;
-  float h = clamp(dot(pa, ba) / dot(ba, ba), 0., 1.);
+  float h = saturate(dot(pa, ba) / dot(ba, ba));
   return length(pa - ba * h) - r;
 }
 
@@ -147,7 +147,7 @@ float sdCone(vec3 p, vec2 c) {
 }
 
 float checkers(vec3 p, float s) {
-  return .3 + .1 * mod(floor(s * p.z) + floor(s * p.x), 2.);
+  return .3 + .1 * mod(floor(p.z * s) + floor(p.x * s), 2.);
 }
 
 vec2 iBox(vec3 ro, vec3 rd, vec3 rad) {
@@ -167,7 +167,7 @@ float sdOctahedron(vec3 p, float s) {
 
 float lineSegment(vec2 p, vec2 a, vec2 b) {
   vec2 pa = p - a, ba = b - a;
-  float h = clamp(dot(pa, ba) / dot(ba, ba), 0., 1.);
+  float h = saturate(dot(pa, ba) / dot(ba, ba));
   return length(pa - ba * h);
 }
 
@@ -187,7 +187,7 @@ float plot(vec2 st, float lw) {
       float yy = st.y + float(y) * lw;
       float sq = sqrt(pow(xx, 2.));
 
-      float d = fract(xx + iTime);
+      float d = fract(xx + iGlobalTime);
       d -= yy;
 
       t += (d >= 0.) ? 1. : -1.;
@@ -195,10 +195,10 @@ float plot(vec2 st, float lw) {
     }
   }
 
-  return float((abs(t) != idx)) * clamp(abs(t / idx) * float(len), 0., 1.);
+  return float((abs(t) != idx)) * saturate(abs(t / idx) * float(len));
 }
 
 float grid(vec2 p, float s) {
   vec2 st = fract(p);
-  return clamp(step(1. - s, st.x) + step(1. - s, st.y), 0., 1.);
+  return saturate(step(1. - s, st.x) + step(1. - s, st.y));
 }

@@ -62,9 +62,9 @@ const App: React.FC = () => {
 
   return (
     <React.Suspense key={Math.random()} fallback={null}>
-      <OrbitControls enableDamping />
+      <OrbitControls maxPolarAngle={Math.PI / 2.1} />
 
-      <mesh {...{ ref }}>
+      <mesh frustumCulled={false} {...{ ref }}>
         <planeBufferGeometry args={[2, 2]} />
         <rawShaderMaterial {...data} />
       </mesh>

@@ -1,4 +1,12 @@
-vec2 sceneSDF(vec3 p, float s) { return vec2(0.); }
+#define SATURATE_TEMPLATE(type) \
+  type saturate(type a) { return clamp(a, 0., 1.); }
+
+SATURATE_TEMPLATE(float)
+SATURATE_TEMPLATE(vec2)
+SATURATE_TEMPLATE(vec3)
+SATURATE_TEMPLATE(vec4)
+
+vec2 sceneSDF(vec3 p, float s);
 
 float dot2(vec2 v) { return dot(v, v); }
 float dot2(vec3 v) { return dot(v, v); }
@@ -100,38 +108,13 @@ vec3 castRay(vec3 ro, vec3 rd) {
   }
 
   t = min(tmax, t);
-
-  return vec3(t, t >= tmax ? -1. : m, s);
+  return vec3(t, max(-1. * float(t >= tmax), m), s / float(MAX_STEPS));
 }
 
-vec2 castSmallRay(vec3 ro, vec3 rd, float tmax) {
-  float t = 0.;
-  float m = -1.;
-
-  for (int i = 0; i < 34; i++) {
-    vec2 h = sceneSDF(ro + (t * rd), 1.);
-
-    if (abs(h).x <= EPSILON || t >= tmax) {
-      break;
-    }
-
-    m = h.y;
-    t += max(EPSILON, h.x);
-  }
-
-  return vec2(min(tmax, t), m > tmax ? -1. : m);
-}
-
-float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
+float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax) {
   float res = 1.;
   float t = tmin;
   float ph = 1e10;
-
-  float tp = (k - ro.y) / rd.y;
-
-  if (tp > .0) {
-    tmax = min(tmax, tp);
-  }
 
   for (int i = 0; i < 16; i++) {
     float h = sceneSDF(ro + (t * rd), 1.).x;
@@ -140,13 +123,13 @@ float calcSoftshadow(vec3 ro, vec3 rd, float tmin, float tmax, const float k) {
       break;
     }
 
-    float s = clamp(k * h / t, 0.0, 1.0);
+    float s = saturate(8. * h / t);
 
-    res = min(res, s * s * (3.0 - 2.0 * s));
-    t += clamp(h, 0.02, 0.10);
+    res = min(res, s * s * (3. - 2. * s));
+    t += clamp(h, .02, .10);
   }
 
-  return clamp(res, 0., 1.);
+  return saturate(res);
 }
 
 float calcAO(vec3 p, vec3 nor) {
@@ -161,7 +144,7 @@ float calcAO(vec3 p, vec3 nor) {
     sca *= 0.95;
   }
 
-  return clamp(1. - 1.5 * occ, 0., 1.);
+  return saturate(1. - 1.5 * occ);
 }
 
 vec3 calcNormal(vec3 p, float e) {
