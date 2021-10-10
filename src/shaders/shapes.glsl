@@ -78,17 +78,6 @@ vec3 opTx(vec3 p, mat4 m) { return (vec4(p, 1.) * m).xyz; }
 vec3 opScale(vec3 p, float s) { return (p / s) * s; }
 
 // Shapes
-
-float sdHeart(vec3 p, float s) {
-  mat3 m_z = mat3(cos(PI), -sin(PI), 0, sin(PI), cos(PI), 0, 0, 0, 1);
-
-  p = m_z * p;
-
-  return sqrt(length(p) * length(p) +
-              pow(pow(p.x, 2.) + .1 * pow(p.z, 2.), .3) * p.y) -
-         s;
-}
-
 float sdSphere(vec3 p, float r) { return length(p) - r; }
 
 float sdBox(vec3 p, vec3 b, float r) {
@@ -146,6 +135,20 @@ float sdCone(vec3 p, vec2 c) {
   return dot(c, vec2(q, p.z));
 }
 
+float sdOctahedron(vec3 p, float s) {
+  p = abs(p);
+  return (p.x + p.y + p.z - s) * .57735027;
+}
+
+float sdHeart(vec3 p, float s) {
+  p.y *= -1.;
+
+  float r = pow(length(p), 2.);
+  float d = sqrt(r + pow(pow(p.x, 2.) + TWOPI * pow(p.z, 2.), .3) * p.y);
+
+  return d - s;
+}
+
 float checkers(vec3 p, float s) {
   return .3 + .1 * mod(floor(p.z * s) + floor(p.x * s), 2.);
 }
@@ -158,11 +161,6 @@ vec2 iBox(vec3 ro, vec3 rd, vec3 rad) {
   vec3 t2 = -n + k;
 
   return vec2(max(max(t1.x, t1.y), t1.z), min(min(t2.x, t2.y), t2.z));
-}
-
-float sdOctahedron(vec3 p, float s) {
-  p = abs(p);
-  return (p.x + p.y + p.z - s) * .57735027;
 }
 
 float lineSegment(vec2 p, vec2 a, vec2 b) {

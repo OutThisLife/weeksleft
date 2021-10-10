@@ -21,13 +21,15 @@ out vec3 rd;
 
 void main() {
   vUv = (uv * 2. - 1.) / iResolution.z;
-  vPos = projectionMatrix * modelViewMatrix * position;
 
   vec4 ndc = vec4(vUv.xy, 1., 1.);
+  vec4 clip = projectionMatrix * modelViewMatrix * position;
+  vec4 world =
+      normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc);
 
   ro = cameraPosition / iResolution.z;
-  rd = normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * ndc).xyz /
-       iResolution.z;
+  rd = world.xyz / iResolution.z;
+  vPos = ndc / atan(world.w, vPos.w * 4.);
 
   gl_Position = position;
 }

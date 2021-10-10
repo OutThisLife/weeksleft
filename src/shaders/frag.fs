@@ -24,8 +24,8 @@ out vec4 fragColor;
 #define TWOPI 6.2831853071796
 #define LOG2 1.442695
 
-#define EPSILON .0005
-#define MAX_STEPS 255
+#define EPSILON .0001
+#define MAX_STEPS 64
 #define MIN_DIST 0.
 #define MAX_DIST 60.
 #define AA 1
@@ -44,7 +44,9 @@ vec2 sceneSDF(vec3 p, float s) {
 
   {
     vec3 q = p - vec3(0., 0., 0.);
-    float d = sdSphere(q, 1. * s);
+    vec3 gv = fract(q) - .5;
+
+    float d = sdSphere(q, 1.);
 
     res = opU(res, vec2(d, 2.));
   }
@@ -83,14 +85,14 @@ void main() {
     float occ = calcAO(p, nor);
     float amb = saturate(.5 + .5 * nor.y);
     float dif = saturate(dot(nor, lig));
-    float mouseDist = distance(mo.xy, cross(normalize(p), nor).xy);
+    float xx = sqrt(pow(nor.y - iGlobalTime, 2.));
+    float an = PI * (sin(xx) * cos(xx));
 
-    dif *= calcSoftshadow(p, lig, 0.02, 2.5);
+    vec3 lin, c = vec3(1.) + (nor * an * (5. * dot(id, id)));
+    lin += 1.30 * dif;
+    lin += 0.9 * amb * c * occ;
 
-    vec3 lin, c = vec3(1.);
-    lin += 1.30 * dif * c;
-    lin += 0.40 * amb * c * occ;
-
+    col *= calcSoftshadow(p, lig, .02, 2.5);
     col = mix(col, lin, k);
   }
 
