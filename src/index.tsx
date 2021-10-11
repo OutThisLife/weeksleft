@@ -8,9 +8,12 @@ import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas camera={{ fov: 30, position: [0, 0, 10] }} dpr={[2, 4]}>
+    <Canvas camera={{ position: [0, 0, 40] }} mode="concurrent">
       <Stats />
-      <App />
+
+      <React.Suspense fallback={null}>
+        <App />
+      </React.Suspense>
     </Canvas>
   </React.StrictMode>,
   document.getElementById('root')

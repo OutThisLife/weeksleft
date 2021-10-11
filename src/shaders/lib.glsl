@@ -89,6 +89,7 @@ vec3 rotate(vec3 v, vec3 axis, float angle) {
 /**
  * Materials, lighting, et al
  */
+#ifdef MAX_STEPS
 vec3 castRay(vec3 ro, vec3 rd) {
   float tmax = MAX_DIST;
   float t = EPSILON;
@@ -157,3 +158,4 @@ vec3 calcNormal(vec3 p, float e) {
 }
 
 vec3 calcNormal(vec3 pos) { return calcNormal(pos, EPSILON); }
+#endif

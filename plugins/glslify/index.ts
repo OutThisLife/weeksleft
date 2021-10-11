@@ -23,7 +23,7 @@ export default (): Plugin => ({
       return modules
     }
 
-    return []
+    return null
   },
 
   name: 'glslify-plugin',
