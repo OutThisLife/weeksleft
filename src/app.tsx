@@ -6,29 +6,62 @@ import * as THREE from 'three'
 import fragmentShader from './shaders/frag.fs'
 import vertexShader from './shaders/vert.vs'
 
+const Stars: React.FC = () => {
+  const positions = React.useMemo(
+    () =>
+      new Float32Array(
+        Array.from([...Array(1e4)]).flatMap(() => [
+          (Math.random() - 0.5) * 20,
+          (Math.random() - 0.5) * 20,
+          -Math.random() * 64
+        ])
+      ),
+    []
+  )
+
+  return (
+    <Billboard>
+      <points>
+        <sphereBufferGeometry args={[90, 64, 64]}>
+          <bufferAttribute
+            array={positions}
+            attachObject={['attributes', 'position']}
+            count={positions.length / 3}
+            itemSize={3}
+          />
+        </sphereBufferGeometry>
+
+        <pointsMaterial
+          color={0x555555}
+          side={THREE.BackSide}
+          size={0.05}
+          sizeAttenuation
+          transparent
+        />
+      </points>
+    </Billboard>
+  )
+}
+
 const Earth: React.FC = () => {
   const ref = React.useRef<any>()
 
   const difTex = useLoader(THREE.TextureLoader, '/earth.jpg')
   const bumpTex = useLoader(THREE.TextureLoader, '/earth-bump.jpg')
-  const speTex = useLoader(THREE.TextureLoader, '/earth-spe.jpg')
-  const cloudTex = useLoader(THREE.TextureLoader, '/earth-clouds.jpg')
+  const speTex = useLoader(THREE.TextureLoader, '/earth-spe.png')
+  const cloudTex = useLoader(THREE.TextureLoader, '/earth-clouds.png')
 
   const data = React.useMemo<ShaderMaterialProps>(
     () => ({
       fragmentShader,
       side: THREE.DoubleSide,
       uniforms: {
-        bumpTex: new THREE.Uniform(bumpTex),
         cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
         cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
-        cloudTex: new THREE.Uniform(cloudTex),
-        difTex: new THREE.Uniform(difTex),
         iFrame: new THREE.Uniform(1),
         iGlobalTime: new THREE.Uniform(0),
         iMouse: new THREE.Uniform(new THREE.Vector2(0, 0)),
-        iResolution: new THREE.Uniform(new THREE.Vector3(0, 0, 1)),
-        speTex: new THREE.Uniform(speTex)
+        iResolution: new THREE.Uniform(new THREE.Vector3(0, 0, 1))
       },
       vertexShader
     }),
@@ -61,52 +94,37 @@ const Earth: React.FC = () => {
   )
 
   return (
-    <mesh {...{ ref }}>
-      <sphereBufferGeometry args={[15, 32, 100]} />
-      <rawShaderMaterial {...data} />
-    </mesh>
-  )
-}
+    <>
+      <mesh>
+        <sphereBufferGeometry args={[0.5, 120, 120]} />
+        <meshPhongMaterial
+          bumpMap={bumpTex}
+          bumpScale={0.05}
+          map={difTex}
+          side={THREE.DoubleSide}
+          specularMap={speTex}
+        />
+      </mesh>
 
-const Stars: React.FC = () => {
-  const positions = React.useMemo(
-    () =>
-      new Float32Array(
-        Array.from([...Array(1e4)]).flatMap(() => [
-          (Math.random() - 0.5) * 1e2,
-          (Math.random() - 0.5) * 1e2,
-          -Math.random()
-        ])
-      ),
-    []
-  )
+      <mesh>
+        <sphereBufferGeometry args={[0.5001, 120, 120]} />
+        <meshPhongMaterial map={cloudTex} transparent />
+      </mesh>
 
-  return (
-    <Billboard>
-      <points>
-        <bufferGeometry>
-          <bufferAttribute
-            array={positions}
-            attachObject={['attributes', 'position']}
-            count={positions.length / 3}
-            itemSize={3}
-          />
-        </bufferGeometry>
-
-        <pointsMaterial size={0.1} sizeAttenuation />
-      </points>
-    </Billboard>
+      <mesh {...{ ref }}>
+        <sphereBufferGeometry args={[0.54, 120, 120]} />
+        <rawShaderMaterial transparent {...data} />
+      </mesh>
+    </>
   )
 }
 
 const App: React.FC = () => (
   <React.Suspense key={Math.random()} fallback={null}>
-    <OrbitControls
-      autoRotate
-      enableDamping
-      enableZoom={false}
-      maxPolarAngle={Math.PI / 2.1}
-    />
+    <OrbitControls autoRotateSpeed={0.3} enableDamping />
+
+    <ambientLight color={0x888888} />
+    <directionalLight color={0xffffff} position={[5, 3, 5]} />
 
     <Earth />
     <Stars />
