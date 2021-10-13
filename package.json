@@ -15,8 +15,9 @@
     "prebuild": "rm -rf dist"
   },
   "dependencies": {
-    "@react-three/drei": "^7.13.1",
-    "@react-three/fiber": "^7.0.9",
+    "@react-three/drei": "^7.14.1",
+    "@react-three/fiber": "^7.0.15",
+    "@react-three/postprocessing": "^2.0.5",
     "@vitejs/plugin-react": "^1.0.1",
     "leva": "^0.9.14",
     "normalize.css": "^8.0.1",

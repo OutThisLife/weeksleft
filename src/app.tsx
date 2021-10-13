@@ -1,21 +1,30 @@
-import { Billboard, OrbitControls } from '@react-three/drei'
+import { Billboard, OrbitControls, useFBO } from '@react-three/drei'
 import type { ShaderMaterialProps } from '@react-three/fiber'
-import { useFrame, useLoader } from '@react-three/fiber'
+import { useLoader, useThree } from '@react-three/fiber'
 import * as React from 'react'
 import * as THREE from 'three'
-import fragmentShader from './shaders/frag.fs'
-import vertexShader from './shaders/vert.vs'
 
 const Stars: React.FC = () => {
-  const ref = React.useRef<any>()
+  const ref = React.useRef<THREE.Mesh>()
+  const [scene] = React.useState(() => new THREE.Scene())
+  const target = useFBO()
+  const difTex = useLoader(THREE.TextureLoader, '/earth.jpg')
+
+  const {
+    size: { height, width },
+    viewport: { dpr }
+  } = useThree()
+
+  const w = width * dpr
+  const h = height * dpr
 
   const positions = React.useMemo(
     () =>
       new Float32Array(
         Array.from([...Array(1e4)]).flatMap(() => [
-          (Math.random() - 0.5) * 20,
-          (Math.random() - 0.5) * 20,
-          -Math.random() * 64
+          (Math.random() - 0.5) * 5,
+          (Math.random() - 0.5) * 5,
+          -Math.random()
         ])
       ),
     []
@@ -24,55 +33,57 @@ const Stars: React.FC = () => {
   const colours = React.useMemo(
     () =>
       new Float32Array(
-        Array.from([...Array(1e4)]).flatMap(() => [1, 1, 1, 1 + Math.random()])
+        Array.from([...Array(1e4)]).flatMap(() => [
+          1,
+          1,
+          1,
+          Math.random() - 0.5
+        ])
       ),
     []
   )
 
   const data = React.useMemo<ShaderMaterialProps>(
     () => ({
-      fragmentShader: `
-        uniform vec4 color;
-        
-        void main() {
-          vec3 col = vec3(1.);
-          pc_fragColor = vec4(clamp(col, 0., 1.), color.a);
-        }
+      fragmentShader: `#version 300 es
+        precision mediump float;
+
+        in vec4 vColour;
+        out vec4 fragColor;
+
+        void main() { fragColor = vColour; }
       `,
       side: THREE.DoubleSide,
+      transparent: true,
       uniforms: {
-        iResolution: new THREE.Uniform(new THREE.Vector3(0, 0, 1))
+        iResolution: new THREE.Uniform(new THREE.Vector3(w, h, w / h))
       },
-      vertexShader: `
+      vertexColors: true,
+      vertexShader: `#version 300 es
+        
+        uniform mat4 projectionMatrix;
+        uniform mat4 modelViewMatrix;
         uniform vec3 iResolution;
+
+        in vec4 color;
+        in vec4 position;
+
+        out vec4 vColour;
         
         void main() {
-          gl_PointSize = 0.1 / iResolution.z;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
+          vColour = color;
+          
+          gl_PointSize = 2. * iResolution.z;
+          gl_Position = position;
         }
       `
     }),
     []
   )
 
-  useFrame(({ size: { height, width }, viewport: { dpr } }) => {
-    const $m = ref.current as THREE.Mesh
-
-    if ($m instanceof THREE.Mesh) {
-      const $s = $m.material
-
-      if ($s instanceof THREE.ShaderMaterial) {
-        const w = width * dpr
-        const h = height * dpr
-
-        $s.uniforms.iResolution.value.copy(new THREE.Vector3(w, h, w / h))
-      }
-    }
-  })
-
   return (
     <Billboard>
-      <points {...{ ref }}>
+      <points>
         <sphereBufferGeometry args={[90, 64, 64]}>
           <bufferAttribute
             array={positions}
@@ -89,15 +100,13 @@ const Stars: React.FC = () => {
           />
         </sphereBufferGeometry>
 
-        <shaderMaterial {...data} />
+        <rawShaderMaterial {...data} />
       </points>
     </Billboard>
   )
 }
 
 const Earth: React.FC = () => {
-  const ref = React.useRef<any>()
-
   const difTex = useLoader(THREE.TextureLoader, '/earth.jpg')
   const bumpTex = useLoader(THREE.TextureLoader, '/earth-bump.jpg')
   const speTex = useLoader(THREE.TextureLoader, '/earth-spe.png')
@@ -105,48 +114,52 @@ const Earth: React.FC = () => {
 
   const data = React.useMemo<ShaderMaterialProps>(
     () => ({
-      fragmentShader,
+      blending: THREE.AdditiveBlending,
+      fragmentShader: `#version 300 es
+      precision highp float;
+
+      in vec3 vNormal;
+      in vec3 vNormel;
+      out vec4 fragColor;
+
+      void main() {
+        vec3 col = vec3(0., 8, 1.);
+        float d = pow(1. - dot(vNormal, vNormel), 4.);
+
+        fragColor = vec4(col, smoothstep(0., 4., d));
+      }
+      `,
       side: THREE.DoubleSide,
-      uniforms: {
-        cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
-        cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
-        iFrame: new THREE.Uniform(1),
-        iGlobalTime: new THREE.Uniform(0),
-        iMouse: new THREE.Uniform(new THREE.Vector2(0, 0)),
-        iResolution: new THREE.Uniform(new THREE.Vector3(0, 0, 1))
-      },
-      vertexShader
+      transparent: true,
+      vertexShader: `#version 300 es
+
+      uniform mat3 normalMatrix;
+      uniform mat4 modelViewMatrix;
+      uniform mat4 projectionMatrix;
+      uniform vec3 cameraPosition;
+
+      in vec3 normal;
+      in vec3 uv;
+      in vec4 position;
+
+      out vec3 vNormal;
+      out vec3 vNormel;
+      out vec3 vUv;
+
+      void main() {
+        vUv = uv;
+        vNormal = normalize(normalMatrix * normal);
+        vNormel = normalize(normalMatrix * cameraPosition);
+
+        gl_Position = projectionMatrix * modelViewMatrix * position;
+      }
+    `
     }),
     []
   )
 
-  useFrame(
-    ({ camera, clock, mouse, size: { height, width }, viewport: { dpr } }) => {
-      const $m = ref.current as THREE.Mesh
-
-      if ($m instanceof THREE.Mesh) {
-        const $s = $m.material
-
-        if ($s instanceof THREE.RawShaderMaterial) {
-          const w = width * dpr
-          const h = height * dpr
-
-          $s.uniforms.iFrame.value += 1
-          $s.uniforms.iGlobalTime.value = clock.getElapsedTime()
-          $s.uniforms.iMouse.value.copy(mouse)
-          $s.uniforms.iResolution.value.copy(new THREE.Vector3(w, h, w / h))
-
-          $s.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
-          $s.uniforms.cameraProjectionMatrixInverse.value.copy(
-            camera.projectionMatrixInverse
-          )
-        }
-      }
-    }
-  )
-
   return (
-    <>
+    <group>
       <mesh>
         <sphereBufferGeometry args={[0.5, 120, 120]} />
         <meshPhongMaterial
@@ -163,23 +176,23 @@ const Earth: React.FC = () => {
         <meshPhongMaterial map={cloudTex} transparent />
       </mesh>
 
-      <mesh {...{ ref }}>
+      <mesh>
         <sphereBufferGeometry args={[0.54, 120, 120]} />
-        <rawShaderMaterial transparent {...data} />
+        <rawShaderMaterial {...data} />
       </mesh>
-    </>
+    </group>
   )
 }
 
 const App: React.FC = () => (
   <React.Suspense key={Math.random()} fallback={null}>
-    <OrbitControls autoRotateSpeed={0.3} enableDamping />
-
-    <ambientLight color={0x888888} />
-    <directionalLight color={0xffffff} position={[5, 3, 5]} />
+    <OrbitControls autoRotateSpeed={0.3} enableDamping makeDefault />
 
     <Earth />
     <Stars />
+
+    <ambientLight color={0x888888} />
+    <directionalLight color={0xffffff} position={[5, 3, 5]} />
   </React.Suspense>
 )
 
