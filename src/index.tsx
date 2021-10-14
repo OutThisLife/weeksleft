@@ -9,9 +9,10 @@ import './index.css'
 render(
   <React.StrictMode>
     <Canvas
-      camera={{ far: 1e3, fov: 45, near: 0.1, position: [0, 0, 1.5] }}
+      camera={{ position: [0, 2, 5] }}
       dpr={[2, 4]}
-      mode="concurrent">
+      mode="concurrent"
+      shadows>
       <Stats />
 
       <React.Suspense fallback={null}>

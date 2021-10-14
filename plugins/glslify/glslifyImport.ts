@@ -2,7 +2,7 @@ import { readFileSync } from 'fs'
 import { dirname } from 'path'
 
 export default async () => {
-  const { default: glResolve } = await import('glsl-resolve')
+  const { sync } = await import('glsl-resolve')
   const { default: glTokenize } = await import('glsl-tokenizer')
   const { default: glString } = await import('glsl-token-string')
 
@@ -42,7 +42,7 @@ export default async () => {
         const prefix = `\n// ${f}\n`
 
         if (typeof done === 'function') {
-          const resolved = glResolve.sync(f, { basedir })
+          const resolved = sync(f, { basedir })
 
           glslifyImport(
             resolved,
@@ -67,7 +67,7 @@ export default async () => {
         } else {
           total--
 
-          const resolved = glResolve.sync(f, { basedir })
+          const resolved = sync(f, { basedir })
 
           const contents = glslifyImport(
             resolved,
