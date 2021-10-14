@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import 'normalize.css'
 import * as React from 'react'
 import { render } from 'react-dom'
+import * as THREE from 'three'
 import App from './app'
 import './index.css'
 
@@ -12,7 +13,7 @@ render(
       camera={{ position: [0, 2, 5] }}
       dpr={[2, 4]}
       mode="concurrent"
-      shadows>
+      shadows={{ type: THREE.VSMShadowMap }}>
       <Stats />
 
       <React.Suspense fallback={null}>
