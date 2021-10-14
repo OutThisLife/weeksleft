@@ -19,10 +19,6 @@ const vertexShader = glsl`#version 300 es
   out vec3 vLightDir;
   out vec3 vNormal;
 
-  vec3 applyQuaternionToVector(vec4 p, vec3 v) {
-    return v + 2. * cross(p.xyz, cross(p.xyz, v) + p.w * v);
-  }
-
   void main() {
     vec4 worldPos = modelMatrix * position;
 
@@ -51,7 +47,7 @@ const fragmentShader = glsl`#version 300 es
     
     float fog = smoothstep(fogNear, fogFar, gl_FragCoord.z / gl_FragCoord.w);
 
-    fragColor = vec4(pow(mix(vec3(.2 + c), fogColor, fog), vec3(1. / 2.2)), 1.);
+    fragColor = vec4(pow(mix(vec3(.4 + c), fogColor, fog), vec3(1. / 2.2)), 1.);
   }
 `
 
@@ -66,8 +62,8 @@ const App: React.FC = () => {
         $m.material instanceof THREE.RawShaderMaterial
       ) {
         $m.material.uniforms.lightPosition.value = light.current?.position
-        $m.material.uniforms.fogNear.value = scene?.fog?.near || 0
-        $m.material.uniforms.fogFar.value = scene?.fog?.far || 0
+        $m.material.uniforms.fogNear.value = (scene?.fog as any)?.near || 0
+        $m.material.uniforms.fogFar.value = (scene?.fog as any)?.far || 0
         $m.material.uniforms.fogColor.value =
           scene?.fog?.color || new THREE.Color(0xffffff)
       }
@@ -76,7 +72,7 @@ const App: React.FC = () => {
 
   return (
     <React.Suspense key={Math.random()} fallback={null}>
-      <fog args={['#eee', 0, 30]} attach="fog" />
+      <fog args={[0xffffff, 0, 40]} attach="fog" />
 
       <OrbitControls enableDamping makeDefault />
 
@@ -89,9 +85,14 @@ const App: React.FC = () => {
       />
 
       <group {...{ ref }}>
-        <mesh castShadow position={[0, 0.5, 0]} receiveShadow>
+        <mesh castShadow position={[-1, 0.5, 0]} receiveShadow>
           <sphereBufferGeometry args={[0.5, 120, 120]} />
           <meshStandardMaterial color={0xffffff} />
+        </mesh>
+
+        <mesh castShadow position={[1, 0.5, 0]} receiveShadow>
+          <boxBufferGeometry args={[1, 1]} />
+          <meshStandardMaterial color={0x000000} />
         </mesh>
 
         <mesh
