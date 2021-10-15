@@ -528,13 +528,12 @@
   dependencies:
     "@babel/runtime" "^7.13.10"
 
-"@react-three/drei@^7.14.2":
-  version "7.14.2"
-  resolved "https://registry.yarnpkg.com/@react-three/drei/-/drei-7.14.2.tgz#43d6945451911696e00153ec84b33b149229bc00"
-  integrity sha512-hV6sN6atF6M6BpXU6MRyISIBqDWR+6bubNJRUgCpdOn32Ha12CGlvxtZ7GZIlXJs5gTQ48Zlr59HhVIgRCwMBQ==
+"@react-three/drei@^7.14.3":
+  version "7.14.4"
+  resolved "https://registry.yarnpkg.com/@react-three/drei/-/drei-7.14.4.tgz#dde583398db04ba68c5f2c90f5f2b6db849ea3d1"
+  integrity sha512-HIk8RhPX9NXs2irBdNxYoqtUBg3cPDk5eoNNSf2TNAPlTwG6Pdwe05xhv10hBjP0ArFEs+UylBqRZOnhbX1Bog==
   dependencies:
     "@babel/runtime" "^7.11.2"
-    blob-polyfill "^5.0.20210201"
     detect-gpu "^3.1.21"
     glsl-noise "^0.0.0"
     lodash.omit "^4.5.0"
@@ -549,10 +548,10 @@
     utility-types "^3.10.0"
     zustand "^3.5.13"
 
-"@react-three/fiber@^7.0.15":
-  version "7.0.15"
-  resolved "https://registry.yarnpkg.com/@react-three/fiber/-/fiber-7.0.15.tgz#1f3b4a6166987b821b0ee3a7e75b16ff4f1aab66"
-  integrity sha512-EeCbOlcUASskZjdCFnBgtSNyol+Kg09DEQXvCUOzqax2oMBrWKXmj9MogNG9Yzvm2dtSTmEUqe6eN8Rs8Z2nyQ==
+"@react-three/fiber@^7.0.16":
+  version "7.0.16"
+  resolved "https://registry.yarnpkg.com/@react-three/fiber/-/fiber-7.0.16.tgz#cc309b89247a94fe790f6325f2e145048f27ff78"
+  integrity sha512-yIRMFfkHBMcii/GkRjOsEAMnvcbn/8jdI/b83zfH5sX8MEKZU1Bi1PmSQNcMbqZOY8eZQl4DCLxwBa4asA6Fig==
   dependencies:
     "@babel/runtime" "^7.13.10"
     react-merge-refs "^1.1.0"
@@ -973,11 +972,6 @@ bl@^2.2.1:
   dependencies:
     readable-stream "^2.3.5"
     safe-buffer "^5.1.1"
-
-blob-polyfill@^5.0.20210201:
-  version "5.0.20210201"
-  resolved "https://registry.yarnpkg.com/blob-polyfill/-/blob-polyfill-5.0.20210201.tgz#0024bfa5dcc3440eb5a2f1e5991cb1612a558465"
-  integrity sha512-SrH6IG6aXL9pCgSysBCiDpGcAJ1j6/c1qCwR3sTEQJhb+MTk6FITNA6eW6WNYQDNZVi4Z9GjxH5v2MMTv59CrQ==
 
 brace-expansion@^1.1.7:
   version "1.1.11"

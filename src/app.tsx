@@ -1,6 +1,7 @@
 import { OrbitControls, softShadows } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import glsl from 'glslify'
+import { Effect } from 'postprocessing'
 import * as React from 'react'
 import * as THREE from 'three'
 
@@ -15,70 +16,6 @@ const chunks = Object.fromEntries(
       .replace(/gl_FragColor/gm, 'fragColor')
   ])
 ) as typeof THREE.ShaderChunk
-
-const vertexShader = glsl`
-  #version 300 es
-  precision highp float;
-  
-  #define USE_FOG
-  #define USE_SHADOWMAP
-  
-  ${chunks.common}
-  ${chunks.shadowmap_pars_vertex}
-  ${chunks.fog_pars_vertex}
-
-  uniform mat3 normalMatrix;
-  uniform mat4 modelMatrix;
-  uniform mat4 modelViewMatrix;
-  uniform mat4 projectionMatrix;
-  uniform mat4 viewMatrix;
-
-  in vec3 normal;
-  in vec3 uv;
-  in vec4 position;
-
-  void main() {
-    ${chunks.beginnormal_vertex}
-    ${chunks.defaultnormal_vertex}
-    ${chunks.begin_vertex}
-    ${chunks.project_vertex}
-    ${chunks.fog_vertex}
-    ${chunks.worldpos_vertex}
-    ${chunks.shadowmap_vertex}
-  }
-`.trim()
-
-const fragmentShader = glsl`
-  #version 300 es
-  precision highp float;
-  
-  #define USE_FOG
-  #define USE_SHADOWMAP
-
-  ${chunks.common}
-  ${chunks.packing}
-  ${chunks.fog_pars_fragment}
-  ${chunks.shadowmap_pars_fragment}
-
-  out vec4 fragColor;
-
-  void main() {
-    vec3 col;
-
-    for (int i = 0; i < NUM_DIR_LIGHT_SHADOWS; i++) {
-      DirectionalLightShadow lig = directionalLightShadows[i];
-      
-      vec4 uv = vDirectionalShadowCoord[i];
-      float c = getShadow(directionalShadowMap[0], lig.shadowMapSize, lig.shadowBias, lig.shadowRadius, uv);
-
-      col += vec3(.7 + c);
-    }
-
-    col = mix(col, fogColor, smoothstep(fogNear, fogFar, vFogDepth));
-    
-    fragColor = vec4(col, 1.);
-  }
-`.trim()
 
 const Sphere: React.FC<any> = ({ innerRef, ...props }) => {
   const ref = React.useRef<THREE.Group>()
@@ -112,6 +49,125 @@ const Sphere: React.FC<any> = ({ innerRef, ...props }) => {
     </group>
   )
 }
+
+const Plane: React.FC<any> = props => {
+  const vertexShader = glsl`
+  #version 300 es
+  precision highp float;
+  
+  #define USE_FOG
+  #define USE_SHADOWMAP
+  
+  ${chunks.common}
+  ${chunks.shadowmap_pars_vertex}
+  ${chunks.fog_pars_vertex}
+
+  uniform mat3 normalMatrix;
+  uniform mat4 modelMatrix;
+  uniform mat4 modelViewMatrix;
+  uniform mat4 projectionMatrix;
+  uniform mat4 viewMatrix;
+
+  in vec3 normal;
+  in vec3 uv;
+  in vec4 position;
+
+  void main() {
+    ${chunks.beginnormal_vertex}
+    ${chunks.defaultnormal_vertex}
+    ${chunks.begin_vertex}
+    ${chunks.project_vertex}
+    ${chunks.fog_vertex}
+    ${chunks.worldpos_vertex}
+    ${chunks.shadowmap_vertex}
+  }
+`.trim()
+
+  const fragmentShader = glsl`
+  #version 300 es
+  precision highp float;
+  
+  #define USE_FOG
+  #define USE_SHADOWMAP
+
+  ${chunks.common}
+  ${chunks.packing}
+  ${chunks.fog_pars_fragment}
+  ${chunks.shadowmap_pars_fragment}
+
+  out vec4 fragColor;
+
+  void main() {
+    vec3 col;
+
+    for (int i = 0; i < NUM_DIR_LIGHT_SHADOWS; i++) {
+      DirectionalLightShadow lig = directionalLightShadows[i];
+      
+      vec4 uv = vDirectionalShadowCoord[i];
+      float c = getShadow(directionalShadowMap[0], lig.shadowMapSize, lig.shadowBias, lig.shadowRadius, uv);
+
+      col += vec3(.7 + c);
+    }
+
+    col = mix(col, fogColor, smoothstep(fogNear, fogFar, vFogDepth));
+    
+    fragColor = vec4(col, 1.);
+  }
+`.trim()
+
+  return (
+    <mesh {...props}>
+      <planeBufferGeometry args={[1e3, 1e3]} />
+      <rawShaderMaterial
+        lights
+        fog
+        uniforms={THREE.UniformsUtils.merge([
+          THREE.UniformsLib.lights,
+          THREE.UniformsLib.fog
+        ])}
+        {...{ fragmentShader, vertexShader }}
+      />
+    </mesh>
+  )
+}
+
+const Outline = React.forwardRef((_, ref) => {
+  const [camera, setCamera] = React.useState<THREE.CubeCamera>()
+  const [fbo] = React.useState(() => new THREE.WebGLCubeRenderTarget(2048))
+
+  useFrame(({ gl, scene }) => {
+    camera?.update(gl, scene)
+  })
+
+  const object = React.useMemo(() => {
+    const fragmentShader = glsl`
+    uniform sampler2D sceneTexture;
+    
+    void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 fragColor) {
+      vec3 col;
+      vec4 t = texture(sceneTexture, uv);
+
+      fragColor = vec4(col, 1.);
+    }
+    `.trim()
+
+    return new (class extends Effect {
+      constructor() {
+        super('MyBob', fragmentShader, {
+          blendFunction: THREE.NormalBlending,
+          uniforms: new Map([['sceneTexture', new THREE.Uniform(fbo.texture)]])
+        })
+      }
+    })()
+  }, [])
+
+  return (
+    <>
+      <cubeCamera args={[0.1, 1e3, fbo]} ref={setCamera} />
+      <primitive {...{ ref, object, dispose: null }} />
+    </>
+  )
+})
 
 const App: React.FC = () => {
   const ref = React.useRef<THREE.Group>()
@@ -159,18 +215,7 @@ const App: React.FC = () => {
         </mesh>
       </group>
 
-      <mesh position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeBufferGeometry args={[1e3, 1e3]} />
-        <rawShaderMaterial
-          lights
-          fog
-          uniforms={THREE.UniformsUtils.merge([
-            THREE.UniformsLib.lights,
-            THREE.UniformsLib.fog
-          ])}
-          {...{ fragmentShader, vertexShader }}
-        />
-      </mesh>
+      <Plane position={[0, -1, 0]} rotation={[-Math.PI / 2, 0, 0]} />
     </React.Suspense>
   )
 }
