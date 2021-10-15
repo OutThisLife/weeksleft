@@ -1,5 +1,5 @@
 import { OrbitControls, softShadows } from '@react-three/drei'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import glsl from 'glslify'
 import * as React from 'react'
 import * as THREE from 'three'
@@ -80,35 +80,33 @@ const fragmentShader = glsl`
   }
 `.trim()
 
-const Sphere: React.FC<any> = props => {
+const Sphere: React.FC<any> = ({ innerRef, ...props }) => {
   const ref = React.useRef<THREE.Group>()
   const [camera, setCamera] = React.useState<THREE.CubeCamera>()
-  const { gl, scene } = useThree()
+  const [fbo] = React.useState(() => new THREE.WebGLCubeRenderTarget(2048))
 
-  const [fbo] = React.useState(
-    () =>
-      new THREE.WebGLCubeRenderTarget(2048, {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        format: THREE.RGBFormat,
-        encoding: gl.outputEncoding
-      })
-  )
+  const envMap = fbo.texture
+  envMap.format = THREE.RGBFormat
+  envMap.mapping = THREE.CubeReflectionMapping
 
-  useFrame(() => {
+  useFrame(({ gl, scene }) => {
     ref.current?.traverse(o => (o.visible = false))
     camera?.update(gl, scene)
     ref.current?.traverse(o => (o.visible = true))
   })
 
   return (
-    <group {...props}>
+    <group ref={innerRef} {...props}>
       <cubeCamera args={[0.1, 1e3, fbo]} ref={setCamera} />
 
       <group {...{ ref }}>
         <mesh castShadow receiveShadow>
-          <sphereBufferGeometry args={[0.7, 100, 100]} />
-          <meshPhongMaterial envMap={fbo.texture} />
+          <sphereBufferGeometry args={[0.5, 120, 120]} />
+          <meshPhongMaterial
+            specular={new THREE.Color('#f00')}
+            shininess={1e2}
+            {...{ envMap }}
+          />
         </mesh>
       </group>
     </group>
@@ -118,7 +116,13 @@ const Sphere: React.FC<any> = props => {
 const App: React.FC = () => {
   const ref = React.useRef<THREE.Group>()
 
-  useFrame(() => void (ref.current.rotation.z += 0.01))
+  useFrame(() => {
+    const $g = ref.current
+
+    if ($g instanceof THREE.Group) {
+      $g.traverse(o => (o.rotation.y += 0.005))
+    }
+  })
 
   return (
     <React.Suspense key={Math.random()} fallback={null}>
@@ -141,11 +145,15 @@ const App: React.FC = () => {
         shadow-camera-bottom={-10}
       />
 
-      <Sphere position={[2, 1, 0]} />
-      <Sphere position={[-2, 1, 0]} />
+      <Sphere position={[0, 1, 0]} />
 
-      <group position={[0, 1, 0]} rotation={[0, 0, -1]} {...{ ref }}>
-        <mesh castShadow receiveShadow>
+      <group position={[0, 1, 0]} rotation={[0, 0, 0]} {...{ ref }}>
+        <mesh position={[-2, 0, 0]} castShadow receiveShadow>
+          <boxBufferGeometry args={[1, 1]} />
+          <meshStandardMaterial color={new THREE.Color(0xff3366)} />
+        </mesh>
+
+        <mesh castShadow receiveShadow position={[2, 0, 0]}>
           <boxBufferGeometry args={[1, 1]} />
           <meshStandardMaterial color={new THREE.Color(0xff3366)} />
         </mesh>
