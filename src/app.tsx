@@ -45,31 +45,38 @@ const fragmentShader = glsl`
   #define PI 3.1415926538
   #define PHI 2.399963229728653
 
-  void main() {
-    vec3 col;
+vec3 getPoint(vec3 p, vec3 offset) {
+  p -= offset / iResolution.z;
 
-    vec3 st = vUv * iResolution.z;
-    st *= 2. - 1.;
-    
-    vec3 gv = fract(st * 25.) - .5;
-    
-    for (int i = 0; i < 10; i++) {
-      float idx = float(i - 5);
+  vec3 id = floor(p);
+  float s = length(p);
+  
+  float i = dot(id.x, id.y);
+  float y = (1. / i / s) * 2.;
+  float r = sqrt(pow(y, 2.));
 
-      vec3 uv = gv - vec3(-.1 * idx);
-      vec3 id = floor(uv);
-      
-      float s = length(uv);
-      float m = dot(id.x, id.z * id.y);
-      
-      float y =  (1. / m / s) * 2.;
-      float x = cos(m * PHI) * sqrt(pow(y, 2.));
+  float x = cos(i * PHI) * r;
+  float z = sin(i * PHI) * r;
+  
+  return vec3(x, y, z);
+}
 
-      col += vec3(0., y * x, 0.);
-    }
+void main() {
+  vec3 col;
 
-    fragColor = vec4(col, 1.);
+  vec3 st = vUv * iResolution.z;
+  st *= 2. - 1.;
+  
+  vec3 gv = fract(st * 44.) - .5;
+  float f = gl_FrontFacing ? 1. : -1.;
+
+  {
+    vec3 p = getPoint(gv, vec3(.48));
+    col += vec3(clamp(1. - p.y, .001, .2 * f));
   }
+
+  fragColor = vec4(pow(col, vec3(1. / 2.2)), 1.);
+}
 `.trim()
 
 const App: React.FC = () => {
