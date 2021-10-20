@@ -6,6 +6,9 @@ uniform vec2 iMouse;
 uniform float iTime;
 
 in vec2 vUv;
+in vec3 vNormal;
+in vec4 vPos;
+
 out vec4 fragColor;
 
 #define PI 3.1415926538
@@ -13,47 +16,52 @@ out vec4 fragColor;
 #define saturate(a) clamp(a, 0., 1.)
 
 vec2 N(float a) { return vec2(sin(a), cos(a)); }
+float pixel(float a) { return a / max(iResolution.x, iResolution.y); }
 
-void mainImage(vec2 st) {
+void mainImage(in vec2 st) {
   vec3 col;
 
-  {
-    float y = smoothstep(.1, .5, fract((st.y) + .25));
-    float x = smoothstep(0., .05, abs(abs(st.x) - (y * .05)));
-    float m = smoothstep(.05 * (1. - y), 0., x);
+  vec2 uv = st * 1.25;
+  vec2 m = iMouse * iResolution.xy / iResolution.xy;
 
-    // col += m;
-  }
+  float md = (distance(m * 1.25, uv / vPos.xy)) / 2.;
 
-  vec2 uv = st;
   uv.x = abs(uv.x);
+  uv.y += tan(.833 * PI) * .5;
 
-  vec2 nor = N((5. / 6.) * PI);
+  vec2 n = N(.833 * PI);
+  float d = dot(uv - vec2(.5, 0.), n);
 
-  float scale = 1.;
+  uv -= max(0., d) * n * 2.;
+
   const int steps = 10;
+  const float t = 3.;
+  float scale = 1.;
 
   uv.x += .5;
+  n = N(md * .666 * PI);
 
   for (int i = 0; i < steps; i++) {
-    uv *= 3.;
-    scale *= 3.;
-    uv.x -= 1.5;
+    uv *= t;
+    scale *= t;
+    uv.x -= t / 2.;
 
     uv.x = abs(uv.x) - .5;
-    uv -= nor * min(0., dot(uv, nor)) * 2.;
+    d = dot(uv, n);
+    uv -= min(0., d) * n * 2.;
   }
 
-  float d = length(uv - vec2(clamp(uv.x, -1., 1.), 0.));
+  d = length(uv - vec2(clamp(uv.x, -1., 1.), 0.));
+  col += smoothstep(pixel(3.), 0., d / scale);
 
-  col += smoothstep(.005 / iResolution.z, 0., d / scale);
+  // col += smoothstep(0., .5, abs(m).x);
 
   fragColor = vec4(saturate(pow(col, vec3(1. / 2.2))), 1.);
 }
 
 void main() {
   vec2 st = (gl_FragCoord.xy - .5 * iResolution.xy) / iResolution.y;
-  vec2 uv = vUv - .5;
+  vec2 uv = ((vUv - .5) * iResolution.xy) / iResolution.y;
 
   mainImage(uv);
 }

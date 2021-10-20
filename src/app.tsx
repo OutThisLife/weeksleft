@@ -9,8 +9,8 @@ const App: React.FC = () => {
   const ref = React.useRef<THREE.RawShaderMaterial>()
 
   useFrame(({ mouse, size: { width, height }, viewport: { dpr }, clock }) => {
-    const w = width * dpr
-    const h = height * dpr
+    const w = width
+    const h = height
 
     if (ref.current) {
       ref.current.uniforms.iResolution.value.copy(
