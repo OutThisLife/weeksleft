@@ -8,11 +8,7 @@ import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas
-      camera={{ position: [0, 0, 2] }}
-      dpr={[2, 4]}
-      mode="concurrent"
-      shadows>
+    <Canvas camera={{ position: [0, 0, 2] }} dpr={[2, 4]} mode="concurrent">
       <Stats />
 
       <React.Suspense fallback={null}>
