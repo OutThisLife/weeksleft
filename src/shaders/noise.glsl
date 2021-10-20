@@ -59,7 +59,6 @@ float fbm(in vec2 st) {
   const int o = 1;
   float value = 0.;
   float amplitude = .5;
-  float frequency = 0.;
 
   for (int i = 0; i < o; i++) {
     value += amplitude * noise(st);

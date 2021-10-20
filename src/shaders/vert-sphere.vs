@@ -1,6 +1,7 @@
 #version 300 es
 
 uniform mat4 projectionMatrix;
+uniform mat4 modelViewMatrix;
 uniform mat3 normalMatrix;
 
 in vec3 normal;
@@ -13,7 +14,7 @@ out vec4 vPos;
 
 void main() {
   vUv = uv;
-  vPos = position;
+  vPos = projectionMatrix * modelViewMatrix * position;
   vNormal = normalMatrix * normal;
 
   gl_Position = position;
