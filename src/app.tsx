@@ -9,7 +9,7 @@ const App: React.FC = () => {
   const ref = React.useRef<THREE.RawShaderMaterial>()
 
   useFrame(
-    ({ camera, mouse, size: { width, height }, viewport: { dpr }, clock }) => {
+    ({ camera, clock, mouse, size: { height, width }, viewport: { dpr } }) => {
       const w = width * dpr
       const h = height * dpr
 
@@ -39,16 +39,16 @@ const App: React.FC = () => {
         <planeBufferGeometry args={[2, 2]} />
         <rawShaderMaterial
           uniforms={{
-            iResolution: new THREE.Uniform(new THREE.Vector3(1, 1, 1)),
-            iTime: new THREE.Uniform(0),
-            iMouse: new THREE.Uniform(new THREE.Vector2(1, 1)),
             cameraProjectionMatrixInverse: new THREE.Uniform(
               new THREE.Matrix4()
             ),
             cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
-            iFrame: new THREE.Uniform(1)
+            iFrame: new THREE.Uniform(1),
+            iMouse: new THREE.Uniform(new THREE.Vector2(1, 1)),
+            iResolution: new THREE.Uniform(new THREE.Vector3(1, 1, 1)),
+            iTime: new THREE.Uniform(0)
           }}
-          {...{ ref, fragmentShader, vertexShader }}
+          {...{ fragmentShader, ref, vertexShader }}
         />
       </mesh>
     </React.Suspense>
