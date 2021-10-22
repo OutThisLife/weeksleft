@@ -8,6 +8,23 @@ import vertexShader from './shaders/vert.vs'
 const App: React.FC = () => {
   const ref = React.useRef<THREE.RawShaderMaterial>()
 
+  const props = React.useMemo(
+    () => ({
+      fragmentShader,
+      ref,
+      uniforms: {
+        cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
+        cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
+        iFrame: new THREE.Uniform(1),
+        iMouse: new THREE.Uniform(new THREE.Vector2(1, 1)),
+        iResolution: new THREE.Uniform(new THREE.Vector3(1, 1, 1)),
+        iTime: new THREE.Uniform(0)
+      },
+      vertexShader
+    }),
+    []
+  )
+
   useFrame(
     ({ camera, clock, mouse, size: { height, width }, viewport: { dpr } }) => {
       const w = width * dpr
@@ -37,19 +54,7 @@ const App: React.FC = () => {
 
       <mesh>
         <planeBufferGeometry args={[2, 2]} />
-        <rawShaderMaterial
-          uniforms={{
-            cameraProjectionMatrixInverse: new THREE.Uniform(
-              new THREE.Matrix4()
-            ),
-            cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
-            iFrame: new THREE.Uniform(1),
-            iMouse: new THREE.Uniform(new THREE.Vector2(1, 1)),
-            iResolution: new THREE.Uniform(new THREE.Vector3(1, 1, 1)),
-            iTime: new THREE.Uniform(0)
-          }}
-          {...{ fragmentShader, ref, vertexShader }}
-        />
+        <rawShaderMaterial {...props} />
       </mesh>
     </React.Suspense>
   )
