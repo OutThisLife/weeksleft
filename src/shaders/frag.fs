@@ -25,7 +25,8 @@ float triangle(float x) { return abs(fract((x - 1.) / 4.) - .5) * 4. - 1.; }
 
 void main() {
   vec3 col;
-  vec2 st = (vUv * 2. - 1.) * iResolution.z;
+  vec3 res = normalize(iResolution);
+  vec2 st = (vUv * 2. - 1.) * res.xy;
 
   float zoom = 30.;
 
