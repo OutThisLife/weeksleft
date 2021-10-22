@@ -84,9 +84,9 @@ vec3 mainImage(in vec2 st) {
   {
     vec2 p = abs(st);
 
-    float d = pat(p, .1, .8, 1.6, -noise(p + p));
+    float d = pat(p, .09, .82, 1.6, -noise(p + p));
 
-    col += vec3(0., .8, 1.) * smoothstep(-.1, .7, d);
+    col += vec3(0., .9, 2.) * smoothstep(-.1, .7, d);
   }
 
   return col;
