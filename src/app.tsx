@@ -2,8 +2,8 @@ import { OrbitControls } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as React from 'react'
 import * as THREE from 'three'
-import fragmentShader from './shaders/frag-sphere.fs'
-import vertexShader from './shaders/vert-sphere.vs'
+import fragmentShader from './shaders/frag.fs'
+import vertexShader from './shaders/vert.vs'
 
 const App: React.FC = () => {
   const ref = React.useRef<THREE.RawShaderMaterial>()
