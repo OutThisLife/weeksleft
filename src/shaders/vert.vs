@@ -18,7 +18,7 @@ void main() {
   vUv = uv;
   vPos = projectionMatrix * modelViewMatrix * position;
   vNormal = normalMatrix * normal;
-  vResolution = vec3(normalize(iResolution).xy, iResolution.z);
+  vResolution = vec3(normalize(iResolution.xy), iResolution.z);
 
   gl_Position = position;
 }
