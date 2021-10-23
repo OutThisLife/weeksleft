@@ -80,29 +80,20 @@ void main() {
       normalize(cameraWorldMatrix * cameraProjectionMatrixInverse * vPos).xyz;
 
   float t = iTime * 1.;
-  vec2 c = .51 * cos(vec2(0., .699) + .1 * iTime) -
-           .25 * cos(vec2(0., .699) + .2 * iTime);
+  vec2 c = cos(vec2(0., .699) + .1 * iTime) - cos(vec2(0., .699) + .2 * iTime);
 
   vec2 p = abs(st);
+
+  p *= 20.;
+
   float a = atan(p.y, p.x);
   float r = length(p);
 
-  vec2 uv = vec2(1. / r + .1 * t, a + t / 4. + .5 / r);
-  vec2 gv = fract((10. * uv) / PI) - .5;
+  float d = fbm(p / 30., .5, .9, noise(p), 1.5);
+  d *= 1.5;
 
-  float id = abs(abs(gv.y / gv.x) - .5);
-
-  p *= (20. + 2. * a);
-
-  vec2 p2 = saturate(p / (p * R(cos(id), sin(id))));
-  // p = mix(p2, p, max(p2.x, p2.y));
-
-  float d1 = 1. - 1. * fbm((p2 * id), .5, .5, 0.1, .1);
-  float d2 = fbm(p / 40., .5, .9, noise(p) + .1 * mod(noise(p2 - id), id), 1.5);
-
-  float d = d2 * 2.;
-
-  col += vec3(d, d - .5, triangle(d + 3.));
+  col += vec3(d, d - .5, triangle(d + 3.)) * a;
+  ;
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
 }
