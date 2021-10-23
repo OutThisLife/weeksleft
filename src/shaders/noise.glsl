@@ -55,18 +55,17 @@ float noise(in vec3 x) {
              f.z);
 }
 
-float fbm(in vec2 st) {
-  const int o = 1;
-  float value = 0.;
-  float amplitude = .5;
+float fbm(vec2 p, float t, float amplitude, float s, float a) {
+  float mask = length(p), amp = amplitude;
+  vec2 n = p;
 
-  for (int i = 0; i < o; i++) {
-    value += amplitude * noise(st);
-    st *= 2.;
-    amplitude *= .5;
+  for (int i = 0; i < 8; i++) {
+    n *= R(s, a);
+    t += noise(n) * amp;
+    amp *= amplitude;
   }
 
-  return value;
+  return t - mask;
 }
 
 float voronoi2d(const vec2 st) {

@@ -1,11 +1,3 @@
-#define SATURATE_TEMPLATE(type) \
-  type saturate(type a) { return clamp(a, 0., 1.); }
-
-SATURATE_TEMPLATE(float)
-SATURATE_TEMPLATE(vec2)
-SATURATE_TEMPLATE(vec3)
-SATURATE_TEMPLATE(vec4)
-
 vec2 sceneSDF(vec3 p, float s);
 
 float dot2(vec2 v) { return dot(v, v); }
