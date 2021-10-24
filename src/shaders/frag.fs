@@ -44,7 +44,7 @@ void main() {
   vec2 mo = iMouse / vResolution.z;
 
   vec3 col;
-  float t = iTime * .3;
+  float t = iTime * .1;
 
   // Wings
   {
