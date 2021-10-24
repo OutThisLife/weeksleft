@@ -24,6 +24,7 @@ float triangle(float a) { return abs(fract((a - 1.) / 4.) - .5) * 4. - 1.; }
 const vec3 cInner = vec3(.74, .85, .95);
 const vec3 cOuter = vec3(.52, .69, .87);
 const vec3 cBody = vec3(.22, .81, .95);
+const vec3 cBG = vec3(.3, .2, 1.);
 
 // ---------------------------------------------------
 
@@ -75,7 +76,18 @@ void main() {
       col *= saturate((cOuter / 2.) + sha);
     }
 
-    sparkle(p, col);
+    {
+      vec2 q = abs(p);
+      float r = length(q), d = .5 / r;
+
+      col += cBG * saturate(.3 / r);
+
+      float body = saturate(S(1.3, 2., d));
+      float outline = saturate(fract(S(.99, 1., body)));
+
+      col = mix(col, cBody, body) + cBody * outline;
+      col = mix(col, pow(cBody, vec3(.3)), S(.7, 0., r / .3));
+    }
   }
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 1.)), 1.);
