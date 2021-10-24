@@ -25,8 +25,6 @@ const App: React.FC = () => {
     []
   )
 
-  const i = 0
-
   useFrame(
     ({ camera, clock, mouse, size: { height, width }, viewport: { dpr } }) => {
       const w = width * dpr
