@@ -42,12 +42,6 @@ vec4 sparkles(vec3 p, float s) {
   return vec4(col, d);
 }
 
-float Hash21(vec3 p) {
-  p = fract(p * vec3(123.34, 456.21, 0.));
-  p += dot(p, p + 50.);
-  return fract(p.x * p.y);
-}
-
 // ---------------------------------------------------
 
 void main() {
