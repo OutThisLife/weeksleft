@@ -1,5 +1,5 @@
 #version 300 es
-precision mediump float;
+precision highp float;
 
 uniform vec2 iMouse;
 uniform float iTime;
@@ -15,81 +15,119 @@ out vec4 fragColor;
 
 #define saturate(a) clamp(a, 0., 1.)
 #define S(a, b, c) smoothstep(a, b, c)
+#define ST(a, b) step(a, b)
+#define fsat(a) abs(abs(a) - .5)
 
 // ---------------------------------------------------
 
-mat2 R(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
-mat2 R(float s, float a) { return mat2(s, -a, a, s); }
+const vec3 cOuter = vec3(.52, .69, .87);
+const vec3 cInner = pow(cOuter, vec3(1.2));
+const vec3 cBody = vec3(.22, .81, .95);
+const vec3 cBG = vec3(.12, .1, 1.);
 
-float triangle(float a) { return abs(fract((a - 1.) / 4.) - .5) * 4. - 1.; }
+vec4 sparkles(vec3 p, float s) {
+  vec3 col;
 
-float rand(vec2 st) {
-  return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+  float a = atan(p.x, p.y);
+  float r = length(p);
+
+  float d = saturate(S(1.3, 2., s / r));
+  float outline = saturate(fract(S(.99, 1., d)) * .1);
+  float glow = saturate(S(.66, 0., r / (s - .1)));
+
+  col += cBody * d;
+  col += cBody * outline;
+  // col = mix(col, cBody, d) + cBody * outline;
+  // col = mix(col, pow(cBody, vec3(.2)), glow);
+  col += pow(cBody, vec3(.2)) * glow;
+
+  return vec4(col, d);
 }
 
-float rand(float s) { return rand(vec2(s, dot(s, s))); }
-
-float noise(in vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
-
-  float a = rand(i);
-  float b = rand(i + vec2(1., 0.));
-  float c = rand(i + vec2(0., 1.));
-  float d = rand(i + vec2(1., 1.));
-
-  vec2 u = f * f * (3. - 2. * f);
-  return mix(a, b, u.x) + (c - a) * u.y * (1. - u.x) + (d - b) * u.x * u.y;
-}
-
-float fbm(vec2 p, float t, float amplitude, float s, float a) {
-  float mask = length(p), amp = amplitude;
-  vec2 n = p;
-
-  for (int i = 0; i < 8; i++) {
-    n *= R(s, a);
-    t += noise(n) * amp;
-    amp *= amplitude;
-  }
-
-  return t - mask;
+float Hash21(vec3 p) {
+  p = fract(p * vec3(123.34, 456.21, 0.));
+  p += dot(p, p + 50.);
+  return fract(p.x * p.y);
 }
 
 // ---------------------------------------------------
 
 void main() {
-  vec2 st = (vUv * 2. - 1.) / vResolution.xy;
-  vec2 mo = iMouse * vResolution.xy;
-
   vec3 col;
+  vec3 st = vec3(vUv * 2. - 1., 0.) * vResolution;
+  vec3 mo = vec3(iMouse, 0.) * vResolution;
+
   float t = iTime;
+  float t4 = abs(fract(t * .5) - .5) / .5;
+  float bou = abs(-1. + 2. * t4);
 
+  st.y += .01 * bou;
+
+  // Wings
   {
-    vec2 p = abs(st);
+    float w = .5 + .5 * S(3., 2., 1. / distance(.45, st.y));
+    mat3 m = mat3(vec3(w, 0., 0.), vec3(0., w, 0.), vec3(0., 0., 1.));
 
-    float a = atan(p.x, p.y);
-    float sq = mod(a + (PI / 4.), PI / 2.) - (PI / 4.);
-    float b = mod(a, .03 * vResolution.z);
+    vec3 p = abs(st * 1.3 * m);
+    p.x += .008 * bou;
 
-    float r = length(p);
-    r *= cos(sq) / 1. + dot(p.y, pow(p.y - p.x, 2.));
+    float a = atan(p.y, p.x) * 2.;
+    float r = length(p) * PI;
 
-    vec2 q = vec2((1. / r) - .3 * t, (2. / r) - .4 * t);
+    float d = cos(a);
+    d = 1. - S(d - .02, d + .02, r);
 
-    vec2 gv = fract(q / PI) - .5;
+    // Shading
+    col -= 1. - S(0., d / 1.5, r);
 
-    float d = abs((gv.x + gv.y) - b) - .5;
-    float f = triangle(d / 2.);
+    col += saturate(cOuter * fract(d));
+    col += saturate(cInner * d);
 
-    float n = abs(fbm(fract(10. * gv - r), a, .25, .1, PI / sq));
-    float f2 = saturate(.9 / n);
+    // Tiny wings
+    m = mat3(vec3(1., 0., 0.), vec3(0., -1., 2.), vec3(0., 1.1, -.95));
+    p = abs((st + vec3(0., .28, .1)) * m);
 
-    col += saturate(abs(vec3((.03 / -f), (.02 / d), .01 / d * 4.)));
-    col *= f2;
+    a = atan(p.y * 1.2 + .01, p.x - .01);
+    r = length(p) * TWOPI;
 
-    col = mix(col, f2 * normalize(pow(-col, vec3(-1.))),
-              saturate(f2 - r * 3.) / vResolution.z);
+    float d1 = cos(a);
+    d1 = 1. - S(d1 - .02, d1, r / .95);
+
+    col += saturate(pow(cInner, vec3(2.5)) * (d1 + fract(d1)));
+
+    float tips = S(0., r / 3., 1. - a * sqrt(r / 3.));
+    col *= saturate(cInner + tips);
+
+    // Segments
+    vec3 seg = d * p * r * PI;
+
+    vec3 gv = fract(seg * r) - .5;
+    d = S(0., .03, fsat(gv.y - gv.x));
+
+    gv = fract(cos(seg)) - .5;
+    d = min(d, S(0., .02, fsat(gv.x + gv.y)));
+
+    col += saturate(cInner * (1. - d) * a * .3);
   }
+
+  // Body
+  {
+    vec4 lin = sparkles(abs(st * 3.), .5);
+
+    {
+      vec3 p = abs((st + vec3(-.13, .17, 0.)) * 10.);
+      lin += sparkles(p, .2 + (.01 * bou));
+    }
+
+    {
+      vec3 p = abs((st + vec3(-.16, .2, 0.)) * 10.);
+      lin += sparkles(p, .1 + (.015 * bou));
+    }
+
+    col = mix(col, lin.xyz, lin.w);
+  }
+
+  col += cBG * saturate(.2 / length(abs(st * 3.)));
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
 }
