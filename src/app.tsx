@@ -27,10 +27,10 @@ const App: React.FC = () => {
 
   useFrame(
     ({ camera, clock, mouse, size: { height, width }, viewport: { dpr } }) => {
-      const w = width * dpr
-      const h = height * dpr
-
       if (ref.current) {
+        const w = width * dpr
+        const h = height * dpr
+
         ref.current.uniforms.iResolution.value.copy(
           new THREE.Vector3(w, h, w / h)
         )

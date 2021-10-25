@@ -1,5 +1,5 @@
 #version 300 es
-precision mediump float;
+precision highp float;
 
 uniform vec2 iMouse;
 uniform float iTime;
@@ -20,47 +20,52 @@ out vec4 fragColor;
 
 // ---------------------------------------------------
 
-float triangle(float a) { return abs(fract((a - 1.) / 4.) - .5) * 4. - 1.; }
-
 const vec3 cOuter = vec3(.52, .69, .87);
 const vec3 cInner = pow(cOuter, vec3(1.2));
 const vec3 cBody = vec3(.22, .81, .95);
-const vec3 cBG = vec3(.3, .3, 1.);
+const vec3 cBG = vec3(.12, .1, 1.);
+
+void sparkles(vec3 p, float s, vec3 tmp, inout vec3 col) {
+  float a = atan(p.x, p.y);
+  float r = length(p);
+
+  float d = saturate(S(1.3, 2., s / r));
+  float outline = saturate(fract(S(.99, 1., d)) * .1);
+  float glow = saturate(S(.66, 0., r / (s - .1)));
+
+  col = mix(col, tmp, d) + tmp * outline;
+  col = mix(col, pow(tmp, vec3(.2)), glow);
+}
+
+float Hash21(vec3 p) {
+  p = fract(p * vec3(123.34, 456.21, 0.));
+  p += dot(p, p + 50.);
+  return fract(p.x * p.y);
+}
 
 // ---------------------------------------------------
 
-void sparkle(vec2 p, inout vec3 col) {
-  p = abs(p);
-  float r = length(p), d = .5 / r;
-
-  float body = saturate(S(1.3, 2., d));
-  float outline = saturate(fract(S(.99, 1., body)));
-
-  col = mix(col, cBody, body) + cBody * outline;
-  col = mix(col, pow(cBody, vec3(.3)), S(.7, 0., r / .3));
-}
-
 void main() {
-  vec3 st = vec3((vUv * 2. - 1.) * vResolution.z, 0.);
-  vec2 mo = iMouse / vResolution.z;
-
   vec3 col;
+  vec3 st = vec3(vUv * 2. - 1., 0.) * vResolution;
+  vec3 mo = vec3(iMouse, 0.) * vResolution;
+
   float t = iTime * .1;
 
   // Wings
   {
-    float w = .5 + .5 * S(3., 1.5, 1. / distance(.5, st.y));
+    float w = .5 + .5 * S(3., 2., 1. / distance(.45, st.y));
     mat3 m = mat3(vec3(w, 0., 0.), vec3(0., w, 0.), vec3(0., 0., 1.));
 
-    vec3 p = abs(st * w);
+    vec3 p = abs(st * 1.3 * m);
     float a = atan(p.y, p.x) * 2.;
     float r = length(p) * PI;
 
     float d = cos(a);
     d = 1. - S(d - .02, d + .02, r);
 
-    float sha = 1. - S(0., d / 1.5, r);
-    col -= sha;
+    // Shading
+    col -= 1. - S(0., d / 1.5, r);
 
     // Tiny wings
     m = mat3(vec3(1., 0., 0.), vec3(0., -1., 2.), vec3(0., 1.1, -1.));
@@ -70,12 +75,12 @@ void main() {
     r = length(p) * TWOPI;
 
     float d1 = cos(a);
-    d += 1. - S(d1 - .05, d1, r);
+    d += 1. - S(d1, d1 + .02, r * 1.1);
 
     col += cOuter * saturate(fract(d));
     col += cInner * saturate(d);
 
-    float tips = S(0., r / 3., 1. - a * sqrt(r / 2.));
+    float tips = S(0., r / 3., 1. - a * sqrt(r / 3.));
     col *= saturate(cInner + tips);
 
     // Segments
@@ -87,26 +92,28 @@ void main() {
     gv = fract(cos(seg)) - .5;
     d *= S(0., .02, fsat(gv.x + gv.y));
 
-    d = (1. - d) * a * .2;
+    d = (1. - d) * a * .3;
 
     col += saturate(cInner * d);
   }
 
   // Body
   {
-    vec3 p = abs(st * 2.2);
-    float a = atan(p.x, p.y);
-    float r = length(p), d = .5 / r;
+    vec3 p = abs(st * 3.);
+    col += cBG * saturate(.2 / length(p));
 
-    col += cBG * saturate(.3 / r);
+    {
+      vec3 p = abs((st + vec3(-.13, .17, 0.)) * 10.);
+      sparkles(p, .2, cBody, col);
+    }
 
-    d = saturate(S(1.3, 2., d));
-    float d1 = saturate(fract(S(.99, 1., d)) * .1);
-    float d2 = saturate(S(.66, 0., r / .3));
+    {
+      vec3 p = abs((st + vec3(-.16, .2, 0.)) * 10.);
+      sparkles(p, .1, cBody, col);
+    }
 
-    col = mix(col, cBody, d) + cBody * d1;
-    col = mix(col, pow(cBody, vec3(.2)), d2);
+    sparkles(p, .5, cBody, col);
   }
 
-  fragColor = vec4(pow(saturate(col), vec3(1. / 1.)), 1.);
+  fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
 }
