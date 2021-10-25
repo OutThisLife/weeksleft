@@ -17,7 +17,7 @@ const App: React.FC = () => {
         cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
         iFrame: new THREE.Uniform(1),
         iMouse: new THREE.Uniform(new THREE.Vector2(1, 1)),
-        iResolution: new THREE.Uniform(new THREE.Vector3(1, 1, 1)),
+        iResolution: new THREE.Uniform(new THREE.Vector4(1, 1, 1, 2)),
         iTime: new THREE.Uniform(0)
       },
       vertexShader
@@ -26,17 +26,23 @@ const App: React.FC = () => {
   )
 
   useFrame(
-    ({ camera, clock, mouse, size: { height, width }, viewport: { dpr } }) => {
+    ({
+      camera,
+      clock,
+      mouse: { x, y },
+      size: { height, width },
+      viewport: { aspect: ap, dpr }
+    }) => {
+      const w = width * dpr
+      const h = height * dpr
+
       if (ref.current) {
-        const w = width * dpr
-        const h = height * dpr
+        ref.current.uniforms.iMouse.value.copy(new THREE.Vector2(x, y))
+        ref.current.uniforms.iTime.value = clock.getElapsedTime()
 
         ref.current.uniforms.iResolution.value.copy(
-          new THREE.Vector3(w, h, w / h)
+          new THREE.Vector4(w, h, ap, dpr)
         )
-
-        ref.current.uniforms.iMouse.value.copy(mouse)
-        ref.current.uniforms.iTime.value = clock.getElapsedTime()
 
         ref.current.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
         ref.current.uniforms.cameraProjectionMatrixInverse.value.copy(

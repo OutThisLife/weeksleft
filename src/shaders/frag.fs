@@ -5,6 +5,7 @@ uniform vec2 iMouse;
 uniform float iTime;
 
 in vec2 vUv;
+in vec3 vUvRes;
 in vec3 vResolution;
 
 out vec4 fragColor;
@@ -39,15 +40,20 @@ vec4 sparkles(vec3 p, float s) {
   col += cBody * outline;
   col += pow(cBody, vec3(.2)) * glow;
 
-  return vec4(col, d);
+  return saturate(vec4(col, d));
+}
+
+vec3 hueShift(vec3 c, float s) {
+  vec3 m = vec3(cos(s), s = sin(s) * .5774, -s);
+  return c * mat3(m += (1. - m.x) / 3., m.zxy, m.yzx);
 }
 
 // ---------------------------------------------------
 
 void main() {
   vec3 col;
-  vec3 st = vec3(vUv * 2. - 1., 0.) * vResolution;
-  vec3 mo = vec3(iMouse, 0.) * vResolution;
+  vec3 st = vec3(vUv * 2. - 1., 0.) * vUvRes;
+  vec3 mo = vec3(iMouse, 0.) * vUvRes;
 
   float t = iTime;
   float t4 = abs(fract(t * .5) - .5) / .5;
@@ -100,6 +106,7 @@ void main() {
     d = min(d, S(0., .02, fsat(gv.x + gv.y)));
 
     col += saturate(cInner * (1. - d) * a * .3);
+    col = hueShift(col, bou);
   }
 
   // Body
@@ -119,7 +126,7 @@ void main() {
     col = mix(col, lin.xyz, lin.w);
   }
 
-  col += cBG * saturate(.2 / length(abs(st * 3.)));
+  col += cBG * (1. - dot(st, st));
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
 }
