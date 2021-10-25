@@ -37,8 +37,6 @@ vec4 sparkles(vec3 p, float s) {
 
   col += cBody * d;
   col += cBody * outline;
-  // col = mix(col, cBody, d) + cBody * outline;
-  // col = mix(col, pow(cBody, vec3(.2)), glow);
   col += pow(cBody, vec3(.2)) * glow;
 
   return vec4(col, d);
