@@ -25,7 +25,9 @@ const vec3 cInner = pow(cOuter, vec3(1.2));
 const vec3 cBody = vec3(.22, .81, .95);
 const vec3 cBG = vec3(.12, .1, 1.);
 
-void sparkles(vec3 p, float s, vec3 tmp, inout vec3 col) {
+vec4 sparkles(vec3 p, float s) {
+  vec3 col;
+
   float a = atan(p.x, p.y);
   float r = length(p);
 
@@ -33,8 +35,13 @@ void sparkles(vec3 p, float s, vec3 tmp, inout vec3 col) {
   float outline = saturate(fract(S(.99, 1., d)) * .1);
   float glow = saturate(S(.66, 0., r / (s - .1)));
 
-  col = mix(col, tmp, d) + tmp * outline;
-  col = mix(col, pow(tmp, vec3(.2)), glow);
+  col += cBody * d;
+  col += cBody * outline;
+  // col = mix(col, cBody, d) + cBody * outline;
+  // col = mix(col, pow(cBody, vec3(.2)), glow);
+  col += pow(cBody, vec3(.2)) * glow;
+
+  return vec4(col, d);
 }
 
 float Hash21(vec3 p) {
@@ -50,7 +57,11 @@ void main() {
   vec3 st = vec3(vUv * 2. - 1., 0.) * vResolution;
   vec3 mo = vec3(iMouse, 0.) * vResolution;
 
-  float t = iTime * .1;
+  float t = iTime;
+  float t4 = abs(fract(t * .5) - .5) / .5;
+  float bou = abs(-1. + 2. * t4);
+
+  st.y += .01 * bou;
 
   // Wings
   {
@@ -58,6 +69,8 @@ void main() {
     mat3 m = mat3(vec3(w, 0., 0.), vec3(0., w, 0.), vec3(0., 0., 1.));
 
     vec3 p = abs(st * 1.3 * m);
+    p.x += .008 * bou;
+
     float a = atan(p.y, p.x) * 2.;
     float r = length(p) * PI;
 
@@ -67,53 +80,54 @@ void main() {
     // Shading
     col -= 1. - S(0., d / 1.5, r);
 
-    // Tiny wings
-    m = mat3(vec3(1., 0., 0.), vec3(0., -1., 2.), vec3(0., 1.1, -1.));
-    p = abs((st + vec3(0., .3, .1)) * m);
+    col += saturate(cOuter * fract(d));
+    col += saturate(cInner * d);
 
-    a = atan(p.y + .01, p.x - .01);
+    // Tiny wings
+    m = mat3(vec3(1., 0., 0.), vec3(0., -1., 2.), vec3(0., 1.1, -.95));
+    p = abs((st + vec3(0., .28, .1)) * m);
+
+    a = atan(p.y * 1.2 + .01, p.x - .01);
     r = length(p) * TWOPI;
 
     float d1 = cos(a);
-    d += 1. - S(d1, d1 + .02, r * 1.1);
+    d1 = 1. - S(d1 - .02, d1, r / .95);
 
-    col += cOuter * saturate(fract(d));
-    col += cInner * saturate(d);
+    col += saturate(pow(cInner, vec3(2.5)) * (d1 + fract(d1)));
 
     float tips = S(0., r / 3., 1. - a * sqrt(r / 3.));
     col *= saturate(cInner + tips);
 
     // Segments
-    vec3 seg = d * p * r * 2.;
-    vec3 gv = fract(seg * r) - .5;
+    vec3 seg = d * p * r * PI;
 
+    vec3 gv = fract(seg * r) - .5;
     d = S(0., .03, fsat(gv.y - gv.x));
 
     gv = fract(cos(seg)) - .5;
-    d *= S(0., .02, fsat(gv.x + gv.y));
+    d = min(d, S(0., .02, fsat(gv.x + gv.y)));
 
-    d = (1. - d) * a * .3;
-
-    col += saturate(cInner * d);
+    col += saturate(cInner * (1. - d) * a * .3);
   }
 
   // Body
   {
-    vec3 p = abs(st * 3.);
-    col += cBG * saturate(.2 / length(p));
+    vec4 lin = sparkles(abs(st * 3.), .5);
 
     {
       vec3 p = abs((st + vec3(-.13, .17, 0.)) * 10.);
-      sparkles(p, .2, cBody, col);
+      lin += sparkles(p, .2 + (.01 * bou));
     }
 
     {
       vec3 p = abs((st + vec3(-.16, .2, 0.)) * 10.);
-      sparkles(p, .1, cBody, col);
+      lin += sparkles(p, .1 + (.015 * bou));
     }
 
-    sparkles(p, .5, cBody, col);
+    col = mix(col, lin.xyz, lin.w);
   }
+
+  col += cBG * saturate(.2 / length(abs(st * 3.)));
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
 }
