@@ -15,38 +15,18 @@ out vec4 fragColor;
 #define PHI 2.399963229728653
 
 #define saturate(a) clamp(a, 0., 1.)
-#define S(a, b, c) smoothstep(a, b, c)
-#define ST(a, b) step(a, b)
+#define S(a, b) step(a, b)
+#define SM(a, b, c) smoothstep(a, b, c)
 #define fsat(a) abs(abs(a) - .5)
+#define hue(h) .6 + .6 * cos(h + vec3(0, 23, 21))
 
-// ---------------------------------------------------
+// HUE_TEMPLATE(vec3)
 
-const vec3 cOuter = vec3(.52, .69, .87);
-const vec3 cInner = pow(cOuter, vec3(1.2));
-const vec3 cBody = vec3(.22, .81, .95);
-const vec3 cBG = vec3(.12, .1, 1.);
-
-vec4 sparkles(vec3 p, float s) {
-  vec3 col;
-
-  float a = atan(p.x, p.y);
-  float r = length(p);
-
-  float d = saturate(S(1.3, 2., s / r));
-  float outline = saturate(fract(S(.99, 1., d)) * .1);
-  float glow = saturate(S(.66, 0., r / (s - .1)));
-
-  col += cBody * d;
-  col += cBody * outline;
-  col += pow(cBody, vec3(.2)) * glow;
-
-  return saturate(vec4(col, d));
-}
-
-vec3 hueShift(vec3 c, float s) {
-  vec3 m = vec3(cos(s), s = sin(s) * .5774, -s);
-  return c * mat3(m += (1. - m.x) / 3., m.zxy, m.yzx);
-}
+const vec3 cBase = vec3(1., 0., 0.);
+// vec3 hue(vec3 c, float s) {
+//   vec3 m = vec3(cos(s), s = sin(s) * .5774, -s);
+//   return c * mat3(m += (1. - m.x) / 3., m.zxy, m.yzx);
+// }
 
 // ---------------------------------------------------
 
@@ -56,77 +36,23 @@ void main() {
   vec3 mo = vec3(iMouse, 0.) * vUvRes;
 
   float t = iTime;
-  float t4 = abs(fract(t * .5) - .5) / .5;
-  float bou = abs(-1. + 2. * t4);
+  float t4 = SM(0., 1., abs(fract(t * .5) - .5) / .5);
 
-  st.y += .01 * bou;
+  vec3 p = abs(st);
 
-  // Wings
-  {
-    float w = .5 + .5 * S(3., 2., 1. / distance(.45, st.y));
-    mat3 m = mat3(vec3(w, 0., 0.), vec3(0., w, 0.), vec3(0., 0., 1.));
+  float d = 1. - length(st);
+  float b = 1. - S(.1, st.y + 1. * vUvRes.y);
+  float b2 = S(.1, st.y + 1.01 * vUvRes.y);
 
-    vec3 p = abs(st * 1.3 * m);
-    p.x += .008 * bou;
+  col -= 1. - SM(-2., 2., mod(1., dot(p, p)));
+  col += 1. - SM(-.2, .3, length(st));
 
-    float a = atan(p.y, p.x) * 2.;
-    float r = length(p) * PI;
+  vec3 h = cBase * hue(st.x * 3.);
+  h = mix(h, vec3(1.), 1. - S(.005 * vUvRes.y, distance(mo.x, st.x)));
+  h = mix(h, vec3(1.), b2);
 
-    float d = cos(a);
-    d = 1. - S(d - .02, d + .02, r);
-
-    // Shading
-    col -= 1. - S(0., d / 1.5, r);
-
-    col += saturate(cOuter * fract(d));
-    col += saturate(cInner * d);
-
-    // Tiny wings
-    m = mat3(vec3(1., 0., 0.), vec3(0., -1., 2.), vec3(0., 1.1, -.95));
-    p = abs((st + vec3(0., .28, .1)) * m);
-
-    a = atan(p.y * 1.2 + .01, p.x - .01);
-    r = length(p) * TWOPI;
-
-    float d1 = cos(a);
-    d1 = 1. - S(d1 - .02, d1, r / .95);
-
-    col += saturate(pow(cInner, vec3(2.5)) * (d1 + fract(d1)));
-
-    float tips = S(0., r / 3., 1. - a * sqrt(r / 3.));
-    col *= saturate(cInner + tips);
-
-    // Segments
-    vec3 seg = d * p * r * PI;
-
-    vec3 gv = fract(seg * r) - .5;
-    d = S(0., .03, fsat(gv.y - gv.x));
-
-    gv = fract(cos(seg)) - .5;
-    d = min(d, S(0., .02, fsat(gv.x + gv.y)));
-
-    col += saturate(cInner * (1. - d) * a * .3);
-    col = hueShift(col, bou);
-  }
-
-  // Body
-  {
-    vec4 lin = sparkles(abs(st * 3.), .5);
-
-    {
-      vec3 p = abs((st + vec3(-.13, .17, 0.)) * 10.);
-      lin += sparkles(p, .2 + (.01 * bou));
-    }
-
-    {
-      vec3 p = abs((st + vec3(-.16, .2, 0.)) * 10.);
-      lin += sparkles(p, .1 + (.015 * bou));
-    }
-
-    col = mix(col, lin.xyz, lin.w);
-  }
-
-  col += cBG * (1. - dot(st, st));
+  col += 1. - hue(mo.x * 3.);
+  col = mix(col, saturate(h), b);
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
 }

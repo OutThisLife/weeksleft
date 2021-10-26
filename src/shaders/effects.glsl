@@ -16,6 +16,11 @@ vec3 vignette(vec2 p, float radius) {
   return mix(col, blendOverlay(col, noise), .025);
 }
 
+vec3 hue(vec3 c, float s) {
+  vec3 m = vec3(cos(s), s = sin(s) * .5774, -s);
+  return c * mat3(m += (1. - m.x) / 3., m.zxy, m.yzx);
+}
+
 void getColor(vec3 p, vec3 ro, vec3 rd) {
   vec3 nor = calcNormal(p);
   vec3 lig = normalize(vec3(.4, 1., 2.));
