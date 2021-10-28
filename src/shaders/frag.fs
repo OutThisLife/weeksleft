@@ -23,37 +23,27 @@ out vec4 fragColor;
 
 // ---------------------------------------------------
 
-float hash(vec2 p) {
-  p = fract(p * vec2(123.34, 456.21));
-  p += dot(p, p + 45.32);
-  return fract(p.x * p.y);
-}
-
 void main() {
   vec3 col;
   vec2 st = (vUv * 2. - 1.) * vUvRes.xy;
   vec2 mo = iMouse * vUvRes.xy;
 
-  float t = fract(iTime * .2);
+  float t = iTime * .5;
 
-  vec2 p = st * 25.;
-  float a = atan(p.y, p.x), r = length(p) * 2.;
+  float t1 = .5 + .5 * sin(t * 4.);
+  float t2 = clamp(0., 5., t);
+  t2 = saturate(.5 + .5 * sin(dot(t2, abs(st).y - t)));
 
-  float f = abs(cos(pow(100. * r, .5) - a));
-  float path = 1. - saturate(SM(0., .8, f));
+  vec2 p = abs(st * 1.8);
 
-  {
-    float o = .2;
+  float d1 = max(p.x + .45, p.y - .45);
+  d1 = 1. - saturate(S(.5 + .03 * t1, d1));
 
-    vec2 p = st - cos(vec2(o) * mat2(1., t, -t, 1.));
-    p = mod(p + .1 * .5, .1) - .1 * .5;
+  float d2 = max(p.x + .46, p.y - .44);
+  d2 = 1. - saturate(S(.5, d2));
 
-    float r = length(p) * 2., d = 1. - S(.01, r);
-
-    col += vec3(0., .6, .5) * d * path;
-  }
-
-  col += vec3(.001) * path;
+  col += t2 * vec3(1. - t1, 0., t1) * d1;
+  col = mix(col, vec3(t1, 0., 1. - t1), d2);
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
 }
