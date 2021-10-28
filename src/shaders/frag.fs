@@ -10,6 +10,8 @@ in vec3 vResolution;
 
 out vec4 fragColor;
 
+// ---------------------------------------------------
+
 #define PI 3.1415926538
 #define TWOPI PI * 2.
 #define PHI 2.399963229728653
@@ -17,42 +19,42 @@ out vec4 fragColor;
 #define saturate(a) clamp(a, 0., 1.)
 #define S(a, b) step(a, b)
 #define SM(a, b, c) smoothstep(a, b, c)
-#define fsat(a) abs(abs(a) - .5)
 #define hue(h) .6 + .6 * cos(h + vec3(0, 23, 21))
-
-// HUE_TEMPLATE(vec3)
-
-const vec3 cBase = vec3(1., 0., 0.);
-// vec3 hue(vec3 c, float s) {
-//   vec3 m = vec3(cos(s), s = sin(s) * .5774, -s);
-//   return c * mat3(m += (1. - m.x) / 3., m.zxy, m.yzx);
-// }
 
 // ---------------------------------------------------
 
+float hash(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+
 void main() {
   vec3 col;
-  vec3 st = vec3(vUv * 2. - 1., 0.) * vUvRes;
-  vec3 mo = vec3(iMouse, 0.) * vUvRes;
+  vec2 st = (vUv * 2. - 1.) * vUvRes.xy;
+  vec2 mo = iMouse * vUvRes.xy;
 
-  float t = iTime;
-  float t4 = SM(0., 1., abs(fract(t * .5) - .5) / .5);
+  float t = iTime / 4.;
 
-  vec3 p = abs(st);
+  vec2 p = st * 20.;
+  float a = atan(p.y, p.x), r = length(p) * TWOPI;
 
-  float d = 1. - length(st);
-  float b = 1. - S(.1, st.y + 1. * vUvRes.y);
-  float b2 = S(.1, st.y + 1.01 * vUvRes.y);
+  float path = 1. - saturate(cos(pow(40. * r, .44) - a) + (r / 35.));
 
-  col -= 1. - SM(-2., 2., mod(1., dot(p, p)));
-  col += 1. - SM(-.2, .3, length(st));
+  {
+    vec2 p = st * mat2(cos(t), sin(t), -sin(t), cos(t));
+    p = mod(p + .16 * .5, .16) - .16 * .5;
 
-  vec3 h = cBase * hue(st.x * 3.);
-  h = mix(h, vec3(1.), 1. - S(.005 * vUvRes.y, distance(mo.x, st.x)));
-  h = mix(h, vec3(1.), b2);
+    float r = length(p) * 2.;
+    float a = atan(p.y, p.x);
+    r *= cos(r * 5. * tan(a * 4.));
 
-  col += 1. - hue(mo.x * 3.);
-  col = mix(col, saturate(h), b);
+    float d = 1. - saturate(S(.02, r));
+
+    col += vec3(0., .6, .5) * path * d;
+  }
+
+  col += vec3(.001) * path;
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
 }
