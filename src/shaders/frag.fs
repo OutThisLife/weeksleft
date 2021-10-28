@@ -28,22 +28,24 @@ void main() {
   vec2 st = (vUv * 2. - 1.) * vUvRes.xy;
   vec2 mo = iMouse * vUvRes.xy;
 
-  float t = iTime * .5;
-
-  float t1 = .5 + .5 * sin(t * 4.);
-  float t2 = clamp(0., 5., t);
-  t2 = saturate(.5 + .5 * sin(dot(t2, abs(st).y - t)));
+  float t = iTime;
+  float t1 = .5 + .5 * sin((t * 3.));
 
   vec2 p = abs(st * 1.8);
 
-  float d1 = max(p.x + .45, p.y - .45);
-  d1 = 1. - saturate(S(.5 + .03 * t1, d1));
+  {
+    float d = max(p.x + .45, p.y - .45);
+    d = 1. - S(.5 + .03 * t1, d);
 
-  float d2 = max(p.x + .46, p.y - .44);
-  d2 = 1. - saturate(S(.5, d2));
+    col += vec3(1. - t1, 0., t1) * d;
+  }
 
-  col += t2 * vec3(1. - t1, 0., t1) * d1;
-  col = mix(col, vec3(t1, 0., 1. - t1), d2);
+  {
+    float d = max(p.x + .46, p.y - .44);
+    d = 1. - S(.5, d);
+
+    col = mix(col, vec3(t1, 0., 1. - t1), d);
+  }
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
 }
