@@ -19,7 +19,7 @@ out vec4 fragColor;
 #define saturate(a) clamp(a, 0., 1.)
 #define S(a, b) step(a, b)
 #define SM(a, b, c) smoothstep(a, b, c)
-#define hue(h) .6 + .6 * cos(h + vec3(0, 23, 21))
+#define hue(h) (.6 + .6 * cos(h + vec3(0, 23, 21)))
 
 // ---------------------------------------------------
 
@@ -34,24 +34,23 @@ void main() {
   vec2 st = (vUv * 2. - 1.) * vUvRes.xy;
   vec2 mo = iMouse * vUvRes.xy;
 
-  float t = iTime / 4.;
+  float t = fract(iTime * .2);
 
-  vec2 p = st * 20.;
-  float a = atan(p.y, p.x), r = length(p) * TWOPI;
+  vec2 p = st * 25.;
+  float a = atan(p.y, p.x), r = length(p) * 2.;
 
-  float path = 1. - saturate(cos(pow(40. * r, .44) - a) + (r / 35.));
+  float f = abs(cos(pow(100. * r, .5) - a));
+  float path = 1. - saturate(SM(0., .8, f));
 
   {
-    vec2 p = st * mat2(cos(t), sin(t), -sin(t), cos(t));
-    p = mod(p + .16 * .5, .16) - .16 * .5;
+    float o = .2;
 
-    float r = length(p) * 2.;
-    float a = atan(p.y, p.x);
-    r *= cos(r * 5. * tan(a * 4.));
+    vec2 p = st - cos(vec2(o) * mat2(1., t, -t, 1.));
+    p = mod(p + .1 * .5, .1) - .1 * .5;
 
-    float d = 1. - saturate(S(.02, r));
+    float r = length(p) * 2., d = 1. - S(.01, r);
 
-    col += vec3(0., .6, .5) * path * d;
+    col += vec3(0., .6, .5) * d * path;
   }
 
   col += vec3(.001) * path;
