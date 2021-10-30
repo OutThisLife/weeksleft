@@ -200,3 +200,12 @@ float grid(vec2 p, float s) {
   vec2 st = fract(p);
   return saturate(step(1. - s, st.x) + step(1. - s, st.y));
 }
+
+float tomoe(vec2 p) {
+  float r = length(p), a = atan(p.y, p.x), s = dot(p, p);
+
+  float d = 1. - saturate(r / .2);
+  d *= saturate(sin(a + 12. - 12. * sqrt(s)));
+
+  return d;
+}
