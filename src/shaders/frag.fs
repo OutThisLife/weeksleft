@@ -73,21 +73,14 @@ void main() {
 
   col = mix(col, noise, .1);
 
-  vec2 p = st * R(cos(t), sin(t));
+  vec2 p = st;
 
   float r = length(p), a = atan(abs(p).y, abs(p).x), s = dot(p, p);
   vec2 o = vec2(.1, .12) / 3.;
 
   {
-    vec2 p = p + o;
     float d = SM(0., .2, 2. * tomoe(p));
-    col = mix(col, vec3(.5, 0., 0.), d);
-  }
-
-  {
-    vec2 p = (p - o) * R(-1., 0.);
-    float d = SM(0., .2, 2. * tomoe(p));
-    col = mix(col, vec3(.01), d);
+    col = mix(col, vec3(0.), d);
   }
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
