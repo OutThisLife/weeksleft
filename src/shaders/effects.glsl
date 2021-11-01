@@ -42,3 +42,22 @@ void getColor(vec3 p, vec3 ro, vec3 rd) {
   float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 8.);  // fresnel
   float spe = pow(clamp(dot(ref, hal), 0., .94), 30.);    // specular
 }
+
+vec2 repeatUV(vec2 p, float r, float s) {
+  float t = mod(iTime / 2., 1.);
+
+  float th = atan(TWOPI / 10.);
+  mat2 rot = R(cos(th), sin(th));
+
+  vec2 offset = vec2(1, 2) * t * s * rot;
+  vec2 uv = round(rot * (vec2(r) - offset) / s);
+
+  uv = (uv + vec2(-1, 0)) * rot * s + offset;
+
+  return uv;
+}
+
+float repeat(vec2 p, float r, float s) {
+  vec2 uv = repeatUV(p, r, s);
+  return saturate(pow(uv.x, 2.) + pow(uv.y, 2.));
+}

@@ -202,7 +202,7 @@ float grid(vec2 p, float s) {
 }
 
 float tomoe(vec2 p) {
-  float r = length(p), a = atan(p.y, p.x), s = dot(p, p);
+  float r = length(p - .03), a = atan(p.y, p.x), s = dot(p, p);
 
   float d = 1. - saturate(r / .2);
   d *= saturate(sin(a + 12. - 12. * sqrt(s)));
