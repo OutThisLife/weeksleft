@@ -12,6 +12,8 @@ const App: React.FC = () => {
     () => ({
       fragmentShader,
       ref,
+      side: THREE.DoubleSide,
+      transparent: true,
       uniforms: {
         cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
         cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
@@ -58,7 +60,7 @@ const App: React.FC = () => {
 
       <color args={[0x222222]} attach="background" />
 
-      <mesh>
+      <mesh frustumCulled={false}>
         <planeBufferGeometry args={[2, 2]} />
         <rawShaderMaterial {...props} />
       </mesh>
