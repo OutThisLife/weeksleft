@@ -27,6 +27,14 @@ const App: React.FC = () => {
     []
   )
 
+  Array.from(Array(11).keys()).forEach(i => {
+    const t = i / 10
+    const x = 1 - Math.abs(2 * t - 1)
+    const y = -2 + 4 * t
+
+    console.log('%o\nt: %o\nx: %o\ny: %o', i, t, x, y)
+  })
+
   useFrame(
     ({
       camera,

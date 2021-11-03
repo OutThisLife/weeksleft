@@ -34,22 +34,20 @@ void main() {
 
   float t = iTime;
 
-  const int STEPS = 3;
-  const float GAP = 8.;
-
   {
-    vec2 p = st * GAP;
+    float t = fract(t * .2);
+    float t2 = 1. - abs(2. * t - 1.);
+    float m = rangeTo(t, 4.);
 
-    for (int i = STEPS; i > 0; i--) {
-      float fi = float(i);
+    vec2 p = st - vec2(m, 0);
+    float d = S(.8 + .2 * t2, 1. - length(p));
 
-      float t = fract((fi / float(STEPS)) + t * .2);
-      float d = saturate(1. - abs(2. * t - 1.));
+    col = mix(col, vec3(0, 0, 1. - m), d);
 
-      vec2 o = vec2(rangeTo(t, GAP), 0);
+    p = st + vec2(m, .3);
+    d = S(.8 + .2 * t2, 1. - length(p));
 
-      col += SM(p - o, d);
-    }
+    col = mix(col, vec3(0, 1. - m, 0), d);
   }
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
