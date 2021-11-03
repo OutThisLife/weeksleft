@@ -39,11 +39,6 @@ float opExtrusion(vec3 p, float d, float h) {
 
 vec2 opRevolution(vec3 p, float o) { return vec2(length(p.xz) - o, p.y); }
 
-float smin(float a, float b, float k) {
-  float res = exp(-k * a) + exp(-k * b);
-  return -log(res) / k;
-}
-
 vec3 opCheapBend(vec3 p) {
   const float k = 10.0;
   float c = cos(k * p.x);

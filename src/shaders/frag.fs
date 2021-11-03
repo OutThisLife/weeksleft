@@ -21,8 +21,10 @@ out vec4 fragColor;
 #define saturate(a) clamp(a, 0., 1.)
 #define S(a, b) step(a, b)
 #define SM(v, r) smoothstep(3. / R2.y, 0., length(v) - r)
-#define hue(h) (.6 + .6 * cos((6.3 * h) + vec3(0, 23, 21)))
+#define hue(v) (.6 + .6 * cos(6.3 * (v) + vec3(0, 23, 21)))
 #define rot(a) mat2(cos(a), -sin(a), sin(a), cos(a))
+#define rangeFrom(a, b) ((b / -2.) - b * a)
+#define rangeTo(a, b) ((b / -2.) + b * a)
 
 // ---------------------------------------------------
 
@@ -32,46 +34,23 @@ void main() {
 
   float t = iTime;
 
-  const int STEPS = 63;
-  const float GAP = 4.;
-  float res = 1e3;
-
-  for (int i = STEPS; i > 0; i--) {
-    float fi = float(i);
-
-    float w = fi / float(STEPS);
-    float t = fract(w + t * .2);
-
-    float a = fi / 16. + t * .1;
-    vec2 o = rot(a * TWOPI) * vec2(GAP + GAP * 2. * t, 0);
-
-    vec2 p = st * pow(GAP, 1.8) - o;
-
-    float d = saturate(1. - abs(2. * t - 1.));
-
-    res = min(res, 1. - SM(p, d));
-  }
+  const int STEPS = 3;
+  const float GAP = 8.;
 
   {
-    vec2 p = st;
-    float r, l = length(p), a = atan(p.y, p.x);
+    vec2 p = st * GAP;
 
-    l *= 4.;
-    r = l - a / TWOPI;
-    a += TWOPI * (ceil(r) - .5);
-    a *= (a / 2.) * (PI / TWOPI);
+    for (int i = STEPS; i > 0; i--) {
+      float fi = float(i);
 
-    float u = (fract(a) - .5) / PI;
-    float v = fract(r) - .5;
-    float i = floor(a);
+      float t = fract((fi / float(STEPS)) + t * .2);
+      float d = saturate(1. - abs(2. * t - 1.));
 
-    float t = fract(t * .2);
-    vec2 o = vec2(u, v);
+      vec2 o = vec2(rangeTo(t, GAP), 0);
 
-    col += hue(i / 9.) * SM(o, .1);
+      col += SM(p - o, d);
+    }
   }
-
-  col += res;
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
 }

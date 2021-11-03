@@ -25,6 +25,11 @@ float length8(vec3 p) {
   return pow(p.x + p.y + p.z, 1. / 8.);
 }
 
+float smin(float a, float b, float k) {
+  float h = clamp(0.5 + 0.5 * (a - b) / k, 0.0, 1.0);
+  return mix(a, b, h) - k * h * (1.0 - h);
+}
+
 /**
  * Setup utils
  */
