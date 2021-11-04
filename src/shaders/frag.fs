@@ -28,6 +28,12 @@ out vec4 fragColor;
 
 // ---------------------------------------------------
 
+float rand(vec2 st) {
+  return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+float rand(float s) { return rand(vec2(s, dot(s, s))); }
+
 void main() {
   vec2 st = (vUv * 2. - 1.) * (R.xy * 2.);
   vec3 col;
@@ -35,20 +41,21 @@ void main() {
   float t = iTime;
 
   {
-    float t = fract(t * .2);
-    float t2 = 1. - abs(2. * t - 1.);
-    float m = rangeTo(t, 4.);
+    vec2 p = st;
 
-    vec2 p = st - vec2(m, 0);
-    float d = S(.8 + .2 * t2, 1. - length(p));
+    vec2 gv = fract(p) - .5;
+    vec2 id = floor(p);
 
-    col = mix(col, vec3(0, 0, 1. - m), d);
+    float w = cos(4. * atan(gv.y, p.x));
 
-    p = st + vec2(m, .3);
-    d = S(.8 + .2 * t2, 1. - length(p));
+    float x = fract(w - t * .5);
+    float y = abs(2. * x - 1.);
+    float m = rangeTo(y, 8.);
 
-    col = mix(col, vec3(0, 1. - m, 0), d);
+    p -= vec2(m, 0);
+
+    col += y * SM(p, .1);
   }
 
-  fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1.);
+  fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1);
 }
