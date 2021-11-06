@@ -27,13 +27,20 @@ const App: React.FC = () => {
     []
   )
 
-  Array.from(Array(11).keys()).forEach(i => {
-    const t = i / 10
-    const x = 1 - Math.abs(2 * t - 1)
-    const y = -2 + 4 * t
+  for (let x = -1; x <= 1; x++) {
+    for (let y = -1; y <= 1; y++) {
+      const s = (Math.PI * 2) / 3
+      const a = (Math.atan2(y, x) + s / 2) % (s / 2)
+      const d = Math.sqrt(x ** 2 + y ** 2)
 
-    console.log('%o\nt: %o\nx: %o\ny: %o', i, t, x, y)
-  })
+      const p = [d * Math.cos(a), d * Math.sin(a)]
+
+      console.group({ x, y })
+      console.log({ a, d, s })
+      console.log(p)
+      console.groupEnd()
+    }
+  }
 
   useFrame(
     ({

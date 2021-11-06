@@ -13,14 +13,15 @@ out vec4 fragColor;
 // ---------------------------------------------------
 
 #define R vUvRes
-#define R2 vResolution
+#define Rpx vResolution
 #define PI 3.1415926538
-#define TWOPI 6.2831853076
+#define TWOPI 6.28318530718
 #define PHI 2.399963229728653
 
 #define saturate(a) clamp(a, 0., 1.)
 #define S(a, b) step(a, b)
-#define SM(v, r) smoothstep(3. / R2.y, 0., length(v) - r)
+#define SM(a, b, v) smoothstep(a, b, v)
+#define SMP(v, r) smoothstep(3. / Rpx.y, 0., length(v) - r)
 #define hue(v) (.6 + .6 * cos(6.3 * (v) + vec3(0, 23, 21)))
 #define rot(a) mat2(cos(a), -sin(a), sin(a), cos(a))
 #define rangeFrom(a, b) ((b / -2.) - b * a)
@@ -28,14 +29,20 @@ out vec4 fragColor;
 
 // ---------------------------------------------------
 
-float rand(vec2 st) {
-  return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+vec3 hsv(vec3 c) {
+  vec3 p = saturate(abs(mod(c.x * 6. + vec3(0, 4, 2), 6.) - 3.) - 1.);
+  p = p * p * (3. - 2. * p);
+
+  return c.z * mix(vec3(1), p, c.y);
 }
 
-float rand(float s) { return rand(vec2(s, dot(s, s))); }
+vec3 hsv(float h, float s, float v) { return hsv(vec3(h, s, v)); }
+
+// ---------------------------------------------------
 
 void main() {
   vec2 st = (vUv * 2. - 1.) * (R.xy * 2.);
+  vec2 mo = iMouse * (R.xy * 2.);
   vec3 col;
 
   float t = iTime;
@@ -43,18 +50,20 @@ void main() {
   {
     vec2 p = st;
 
-    vec2 gv = fract(p) - .5;
-    vec2 id = floor(p);
+    float s = TWOPI / 5.;
+    float a = atan(p.y, p.x);
+    float b = mod(a + s * .5, s) - s * .5;
+    float r = length(p) * 2.;
 
-    float w = cos(4. * atan(gv.y, p.x));
+    p = r * vec2(cos(b), sin(b));
+    p -= vec2(.75, 0) * abs(sin(t));
 
-    float x = fract(w - t * .5);
-    float y = abs(2. * x - 1.);
-    float m = rangeTo(y, 8.);
+    float d = sqrt(b * b * (r / .1)) + 2. - 2.25 * r;
+    d = length(length(p) / vec2(cos(d), sin(d))) - 1.;
 
-    p -= vec2(m, 0);
+    d = 1. - d;
 
-    col += y * SM(p, .1);
+    col += hsv(vec3(a / TWOPI, 1, 1)) * d;
   }
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1);
