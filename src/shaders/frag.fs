@@ -50,20 +50,26 @@ void main() {
   {
     vec2 p = st;
 
-    float s = TWOPI / 5.;
+    float s = TWOPI / 4., r = length(p);
+
     float a = atan(p.y, p.x);
     float b = mod(a + s * .5, s) - s * .5;
-    float r = length(p) * 2.;
 
     p = r * vec2(cos(b), sin(b));
-    p -= vec2(.75, 0) * abs(sin(t));
+    p -= vec2(.55, 0);
 
-    float d = sqrt(b * b * (r / .1)) + 2. - 2.25 * r;
-    d = length(length(p) / vec2(cos(d), sin(d))) - 1.;
+    float t = fract(p.x + t / 2.);
+    float sy = .85;
+    float x = 1. - abs(2. * t - 1.);
+    float y = (sy / -2.) - sy * t * 10.;
 
-    d = 1. - d;
+    float d1 = sqrt(b * b * (r / .1)) + 2. - 2.5 * r;
+    vec2 q = length(p) / (x * vec2(cos(d1), sin(d1)));
 
-    col += hsv(vec3(a / TWOPI, 1, 1)) * d;
+    float d = length(q) - (1.25 * abs(atan(p.y, p.x)));
+    d = SM(r, y / 2., d);
+
+    col += hsv(vec3(p.y * r, 1, 1)) * d;
   }
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1);
