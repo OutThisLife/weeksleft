@@ -31,16 +31,16 @@ void getColor(vec3 p, vec3 ro, vec3 rd) {
   float rim = pow(1. - ndotl, 4.);
 
   // lighting
-  float occ = calcAO(p, nor);                        // ambient occlusion
-  float amb = sqrt(clamp(.5 + .5 * nor.y, 0., 1.));  // ambient
-  float dif = clamp(dot(nor, lig), 0., 1.);          // diffuse
+  float occ = calcAO(p, nor);                       // ambient occlusion
+  float amb = sqrt(clamp(.5 + .5 * nor.y, 0., 1.)); // ambient
+  float dif = clamp(dot(nor, lig), 0., 1.);         // diffuse
 
   // backlight
   float bac = clamp(dot(nor, normalize(vec3(-lig.x, 0., -lig.z))), 0., 1.) *
               clamp(1. - nor.y, 0., 1.);
-  float dom = smoothstep(-0.1, 0.1, ref.y);               // dome light
-  float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 8.);  // fresnel
-  float spe = pow(clamp(dot(ref, hal), 0., .94), 30.);    // specular
+  float dom = smoothstep(-0.1, 0.1, ref.y);              // dome light
+  float fre = pow(clamp(1. + dot(nor, rd), 0., 1.), 8.); // fresnel
+  float spe = pow(clamp(dot(ref, hal), 0., .94), 30.);   // specular
 }
 
 vec2 repeatUV(vec2 p, float r, float s) {
@@ -61,3 +61,12 @@ float repeat(vec2 p, float r, float s) {
   vec2 uv = repeatUV(p, r, s);
   return saturate(pow(uv.x, 2.) + pow(uv.y, 2.));
 }
+
+vec3 hsv(vec3 c) {
+  vec3 p = saturate(abs(mod(c.x * 6. + vec3(0, 4, 2), 6.) - 3.) - 1.);
+  p = p * p * (3. - 2. * p);
+
+  return c.z * mix(vec3(1), p, c.y);
+}
+
+vec3 hsv(float h, float s, float v) { return hsv(vec3(h, s, v)); }

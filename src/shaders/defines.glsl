@@ -10,8 +10,6 @@
 #define SMP(v, r) smoothstep(3. / Rpx.y, 0., length(v) - r)
 #define hue(v) (.6 + .6 * cos(6.3 * (v) + vec3(0, 23, 21)))
 #define rot(a) mat2(cos(a), -sin(a), sin(a), cos(a))
-#define rangeFrom(a, b) ((b / -2.) - b * a)
-#define rangeTo(a, b) ((b / -2.) + b * a)
 
 mat3 yuv2rgb =
     mat3(1.0, 0.0, 1.28033, 1.0, -0.21482, -0.38059, 1.0, 2.12798, 0.0);

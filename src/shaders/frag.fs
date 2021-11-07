@@ -24,8 +24,6 @@ out vec4 fragColor;
 #define SMP(v, r) smoothstep(3. / Rpx.y, 0., length(v) - r)
 #define hue(v) (.6 + .6 * cos(6.3 * (v) + vec3(0, 23, 21)))
 #define rot(a) mat2(cos(a), -sin(a), sin(a), cos(a))
-#define rangeFrom(a, b) ((b / -2.) - b * a)
-#define rangeTo(a, b) ((b / -2.) + b * a)
 
 // ---------------------------------------------------
 
@@ -38,6 +36,23 @@ vec3 hsv(vec3 c) {
 
 vec3 hsv(float h, float s, float v) { return hsv(vec3(h, s, v)); }
 
+float hash(vec2 st) {
+  return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+float hash(float s) { return hash(vec2(s, dot(s, s))); }
+
+float hash21(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+
+float circularIn(float t) { return 1. - sqrt(1. - pow(t, 2.)); }
+float cubicInOut(float t) {
+  return t < 0.5 ? 4.0 * t * t * t : 0.5 * pow(2.0 * t - 2.0, 3.0) + 1.0;
+}
+
 // ---------------------------------------------------
 
 void main() {
@@ -46,30 +61,44 @@ void main() {
   vec3 col;
 
   float t = iTime;
+  const int STEPS = 10;
 
-  {
-    vec2 p = st;
+  for (int i = 0; i < STEPS; i++) {
+    float fi = float(i) / float(STEPS);
+    float w = mix(2., .5, fi);
+    float t = fract(w + t / 3.);
+    float animFade = 1. - abs(2. * t - 1.);
+    float animScale = (w / -2.) - w * t * .5;
 
-    float s = TWOPI / 4., r = length(p);
+    vec2 p = st * w;
+    p *= rot(animScale);
 
-    float a = atan(p.y, p.x);
-    float b = mod(a + s * .5, s) - s * .5;
+    vec2 gv = fract(p) - .5;
+    vec2 id = floor(p);
 
-    p = r * vec2(cos(b), sin(b));
-    p -= vec2(.55, 0);
+    float dist = distance(mo, p);
+    float r = length(p) - .1;
 
-    float t = fract(p.x + t / 2.);
-    float sy = .85;
-    float x = 1. - abs(2. * t - 1.);
-    float y = (sy / -2.) - sy * t * 10.;
+    r = SM(0., 1., r);
 
-    float d1 = sqrt(b * b * (r / .1)) + 2. - 2.5 * r;
-    vec2 q = length(p) / (x * vec2(cos(d1), sin(d1)));
+    for (int x = -1; x <= 1; x++)
+      for (int y = -1; y <= 1; y++) {
+        vec2 o = vec2(x, y);
 
-    float d = length(q) - (1.25 * abs(atan(p.y, p.x)));
-    d = SM(r, y / 2., d);
+        float h = hash21(w + id + o);
+        vec2 o2 = vec2(h, fract(h * 3.));
 
-    col += hsv(vec3(p.y * r, 1, 1)) * d;
+        vec2 p = p;
+        p = rot(1. / animScale) * p + (mo * .1 * cubicInOut(h)) + gv - o - o2 +
+            .5;
+
+        float d = length(p) / animFade;
+        d /= 1. * abs(cos(atan(p.y, p.x) * 4. - 12. + 12. * sqrt(dot(p, p))));
+        d = .1 / d * SM(.15, 0., d);
+        d = saturate(1. - max(r, 1. - d));
+
+        col = mix(col, hsv(vec3(1, h, length(gv))), d);
+      }
   }
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1);
