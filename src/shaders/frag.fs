@@ -61,7 +61,7 @@ void main() {
   vec3 col;
 
   float t = iTime;
-  const int STEPS = 10;
+  const int STEPS = 4;
 
   for (int i = 0; i < STEPS; i++) {
     float fi = float(i) / float(STEPS);
