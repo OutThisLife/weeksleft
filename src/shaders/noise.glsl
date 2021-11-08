@@ -86,3 +86,26 @@ float voronoi2d(const vec2 st) {
 
   return pow(1. / res, .0625);
 }
+
+float snoise(vec3 p, float res) {
+  const vec3 s = vec3(1e0, 1e2, 1e3);
+
+  p *= res;
+
+  vec3 uv0 = floor(mod(p, res)) * s;
+  vec3 uv1 = floor(mod(p + vec3(1.), res)) * s;
+
+  vec3 f = fract(p);
+  f = f * f * (3. - 2. * f);
+
+  vec4 v = vec4(uv0.x + uv0.y + uv0.z, uv1.x + uv0.y + uv0.z,
+                uv0.x + uv1.y + uv0.z, uv1.x + uv1.y + uv0.z);
+
+  vec4 r = fract(sin(v * 1e-1) * 1e3);
+  float r0 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+
+  r = fract(sin((v + uv1.z - uv0.z) * 1e-1) * 1e3);
+  float r1 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+
+  return mix(r0, r1, f.z) * 2. - 1.;
+}

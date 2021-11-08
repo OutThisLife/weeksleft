@@ -18,10 +18,11 @@ out vec4 fragColor;
 #define TWOPI 6.28318530718
 #define PHI 2.399963229728653
 
-#define saturate(a) clamp(a, 0., 1.)
+#define C(v, a, b) clamp(v, a, b)
+#define saturate(a) C(a, 0., 1.)
 #define S(a, b) step(a, b)
 #define SM(a, b, v) smoothstep(a, b, v)
-#define SMP(v, r) smoothstep(3. / Rpx.y, 0., length(v) - r)
+#define SMP(v, r) SM(3. / Rpx.y, 0., length(v) - r)
 #define hue(v) (.6 + .6 * cos(6.3 * (v) + vec3(0, 23, 21)))
 #define rot(a) mat2(cos(a), -sin(a), sin(a), cos(a))
 
@@ -34,72 +35,79 @@ vec3 hsv(vec3 c) {
   return c.z * mix(vec3(1), p, c.y);
 }
 
-vec3 hsv(float h, float s, float v) { return hsv(vec3(h, s, v)); }
+float snoise(vec3 p, float res) {
+  const vec3 s = vec3(1e0, 1e2, 1e3);
 
-float hash(vec2 st) {
-  return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+  p *= res;
+
+  vec3 uv0 = floor(mod(p, res)) * s;
+  vec3 uv1 = floor(mod(p + vec3(1), res)) * s;
+
+  vec3 f = fract(p);
+  f = f * f * (3. - 2. * f);
+
+  vec4 v = vec4(uv0.x + uv0.y + uv0.z, uv1.x + uv0.y + uv0.z,
+                uv0.x + uv1.y + uv0.z, uv1.x + uv1.y + uv0.z);
+
+  vec4 r = fract(sin(v * 1e-1) * 1e3);
+  float r0 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+
+  r = fract(sin((v + uv1.z - uv0.z) * 1e-1) * 1e3);
+  float r1 = mix(mix(r.x, r.y, f.x), mix(r.z, r.w, f.x), f.y);
+
+  return mix(r0, r1, f.z) * 2. - 1.;
 }
 
-float hash(float s) { return hash(vec2(s, dot(s, s))); }
+float noise(vec2 p, float res) {
+  float n;
 
-float hash21(vec2 p) {
-  p = fract(p * vec2(123.34, 456.21));
-  p += dot(p, p + 45.32);
-  return fract(p.x * p.y);
-}
+  for (int i = 0; i < 7; i++) {
+    float fi = float(i), v = pow(2., fi);
+    n += (1.5 / v) * snoise(vec3(p + 1. * (fi / 17.), 1), v * res);
+  }
 
-float circularIn(float t) { return 1. - sqrt(1. - pow(t, 2.)); }
-float cubicInOut(float t) {
-  return t < 0.5 ? 4.0 * t * t * t : 0.5 * pow(2.0 * t - 2.0, 3.0) + 1.0;
+  return saturate((1. - n) * .5) * 2.;
 }
 
 // ---------------------------------------------------
 
 void main() {
-  vec2 st = (vUv * 2. - 1.) * (R.xy * 2.);
-  vec2 mo = iMouse * (R.xy * 2.);
+  vec2 st = (vUv * 2. - 1.) * (R.xy * 1.);
+  vec2 mo = iMouse * (R.xy * 1.);
   vec3 col;
 
   float t = iTime;
-  const int STEPS = 4;
 
-  for (int i = 0; i < STEPS; i++) {
-    float fi = float(i) / float(STEPS);
-    float w = mix(2., .5, fi);
-    float t = fract(w + t / 3.);
-    float animFade = 1. - abs(2. * t - 1.);
-    float animScale = (w / -2.) - w * t * .5;
+  // Vars
+  {
 
-    vec2 p = st * w;
-    p *= rot(animScale);
+    vec2 p = st;
+    vec2 dir = normalize(p) * -.4;
 
-    vec2 gv = fract(p) - .5;
-    vec2 id = floor(p);
+    float dc = 1. - (length(p) * 2.);
+    float pdc = pow(dc, 1.5);
 
-    float dist = distance(mo, p);
-    float r = length(p) - .1;
+    float phase0 = fract(t * .3 + .5);
+    float phase1 = fract(t * .3);
+    float lerp = abs((.5 - phase0) / .5);
 
-    r = SM(0., 1., r);
+    vec2 p0 = p + phase0 * dir;
+    vec2 p1 = p + phase1 * dir;
 
-    for (int x = -1; x <= 1; x++)
-      for (int y = -1; y <= 1; y++) {
-        vec2 o = vec2(x, y);
+    {
+      const float s = 7.;
 
-        float h = hash21(w + id + o);
-        vec2 o2 = vec2(h, fract(h * 3.));
+      float d0 = max(noise(p0, s), noise(p0 * 1.2, s));
+      float d1 = max(noise(p1, s), noise(p1 * 1.4, s));
 
-        vec2 p = p;
-        p = rot(1. / animScale) * p + (mo * .1 * cubicInOut(h)) + gv - o - o2 +
-            .5;
+      float d = mix(d0, d1, lerp);
+      float dc = pow(dc, s);
 
-        float d = length(p) / animFade;
-        d /= 1. * abs(cos(atan(p.y, p.x) * 4. - 12. + 12. * sqrt(dot(p, p))));
-        d = .1 / d * SM(.15, 0., d);
-        d = saturate(1. - max(r, 1. - d));
-
-        col = mix(col, hsv(vec3(1, h, length(gv))), d);
-      }
+      col += hsv(vec3(.6, .3, pdc)) * d * pdc;
+      col = mix(col, hsv(vec3(phase0, .1, dc * 2.3)), dc);
+    }
   }
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1);
+  fragColor = vec4(col, 1);
 }

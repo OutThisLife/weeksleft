@@ -27,19 +27,8 @@ const App: React.FC = () => {
     []
   )
 
-  for (let x = -1; x <= 1; x++) {
-    for (let y = -1; y <= 1; y++) {
-      const s = (Math.PI * 2) / 3
-      const a = (Math.atan2(y, x) + s / 2) % (s / 2)
-      const d = Math.sqrt(x ** 2 + y ** 2)
-
-      const p = [d * Math.cos(a), d * Math.sin(a)]
-
-      console.group({ x, y })
-      console.log({ a, d, s })
-      console.log(p)
-      console.groupEnd()
-    }
+  for (let i = 0; i < 7; i++) {
+    console.log(`i=${i}`, `\t2^i: ${2 ** i}\t`, `\ti^2: ${i ** 2}`)
   }
 
   useFrame(
@@ -48,7 +37,7 @@ const App: React.FC = () => {
       clock,
       mouse: { x, y },
       size: { height, width },
-      viewport: { aspect: ap, dpr }
+      viewport: { dpr }
     }) => {
       const w = width * dpr
       const h = height * dpr
@@ -58,7 +47,7 @@ const App: React.FC = () => {
         ref.current.uniforms.iTime.value = clock.getElapsedTime()
 
         ref.current.uniforms.iResolution.value.copy(
-          new THREE.Vector4(w, h, ap, dpr)
+          new THREE.Vector4(w, h, w / h, dpr)
         )
 
         ref.current.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
