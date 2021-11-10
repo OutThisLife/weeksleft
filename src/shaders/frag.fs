@@ -28,6 +28,9 @@ out vec4 fragColor;
 
 // ---------------------------------------------------
 
+const mat2 myt = mat2(.12121212, .13131313, -.13131313, .12121212);
+const vec2 mys = vec2(1e4, 1e6);
+
 vec3 hsv(vec3 c) {
   vec3 p = saturate(abs(mod(c.x * 6. + vec3(0, 4, 2), 6.) - 3.) - 1.);
   p = p * p * (3. - 2. * p);
@@ -35,42 +38,51 @@ vec3 hsv(vec3 c) {
   return c.z * mix(vec3(1), p, c.y);
 }
 
+vec2 rhash(vec2 uv) {
+  uv *= myt;
+  uv *= mys;
+  return fract(fract(uv / mys) * uv);
+}
+
+float voronoi2d(const vec2 st) {
+  vec2 p = floor(st), f = fract(st);
+  float res = 0.;
+
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 b = vec2(i, j);
+      vec2 r = vec2(b) - f + rhash(p + b);
+
+      res += 1. / pow(dot(r, r), 8.);
+    }
+  }
+
+  return pow(1. / res, .0625);
+}
+
 // ---------------------------------------------------
 
 void main() {
-  vec2 st = (vUv * 2. - 1.) * (R.xy * 1.);
-  vec2 mo = iMouse * (R.xy * 1.);
-  vec3 col;
+  vec2 st = (vUv * 2. - 1.) * (R.xy * 2.);
+  vec2 mo = iMouse * (R.xy * 2.);
 
+  vec3 col;
   float t = iTime;
 
-  // Vars
   {
-
     vec2 p = st;
-    vec2 dir = p * -.4;
+    vec2 dir = -normalize(p);
 
-    float dc = 1. - (length(p) * 2.);
-    float pdc = pow(dc, 1.5);
+    p += .5 * tan(dir);
+    p *= rot(length(dir));
+    p *= rot(length(p) + t / 2.);
 
-    float t0 = fract(t * .3 + .5);
-    float t1 = fract(t * .3);
+    float d = length(p);
+    d -= min(SM(0., .1, abs(p.y)), SM(0., .1, abs(p.x)));
 
-    vec2 p0 = p + t0 * dir;
-    vec2 p1 = p + t1 * dir;
+    d = SM(3. / Rpx.y, 1., d);
 
-    {
-      vec2 o = vec2(0, .2);
-      p0 += o;
-      p1 -= o;
-
-      float d0 = max(abs(p0).x, abs(p0).y);
-      float d1 = max(abs(p1).x, abs(p1).y);
-
-      float lerp = abs((.5 - t0) / .5);
-      float d = mix(d0, d1, lerp);
-      col += d;
-    }
+    col += d;
   }
 
   fragColor = vec4(pow(saturate(col), vec3(1. / 2.2)), 1);

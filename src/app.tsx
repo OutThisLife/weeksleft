@@ -27,10 +27,6 @@ const App: React.FC = () => {
     []
   )
 
-  for (let i = 0; i < 7; i++) {
-    console.log(`i=${i}`, `\t2^i: ${2 ** i}\t`, `\ti^2: ${i ** 2}`)
-  }
-
   useFrame(
     ({
       camera,

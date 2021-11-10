@@ -83,6 +83,12 @@ vec3 rotate(vec3 v, vec3 axis, float angle) {
   return (rotation3d(axis, angle) * vec4(v, 1.0)).xyz;
 }
 
+vec3 rot(vec3 v, vec3 u, float a) {
+  float c = cos(a);
+  float s = sin(a);
+  return v * c + cross(u, v) * s + u * dot(u, v) * (1. - c);
+}
+
 /**
  * Materials, lighting, et al
  */
