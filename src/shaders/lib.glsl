@@ -162,3 +162,15 @@ vec3 calcNormal(vec3 p, float e) {
 
 vec3 calcNormal(vec3 pos) { return calcNormal(pos, EPSILON); }
 #endif
+
+// HSV colour bar + picker
+{
+
+  float bt = S(uv.y, .02 * R.z);
+  float x = fract(st.x / 1.5) - .5;
+  float y = x - (fract(mo.x / 1.5) - .5);
+  float h = x - y;
+
+  // Bar on the bottom, can use 'h' as the hue for other shapes.
+  col = mix(col, hsv(vec3(x, 1, 1)) - SMP(y, .001), bt);
+}

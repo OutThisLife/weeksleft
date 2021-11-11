@@ -109,3 +109,15 @@ float snoise(vec3 p, float res) {
 
   return mix(r0, r1, f.z) * 2. - 1.;
 }
+
+float noise(vec2 uv, float s) {
+  float d;
+
+  for (int i = 0; i < 7; i++) {
+    float v = pow(2., float(i));
+
+    d += (1.5 / v) * snoise(vec3(uv + (float(i) / 17.), 1), v * s);
+  }
+
+  return saturate((1. - d) * .5) * 2.;
+}
