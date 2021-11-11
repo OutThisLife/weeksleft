@@ -31,7 +31,7 @@ const App: React.FC = () => {
     ({
       camera,
       clock,
-      mouse: { x, y },
+      mouse: { x = 0, y = 0 },
       size: { height, width },
       viewport: { dpr }
     }) => {
