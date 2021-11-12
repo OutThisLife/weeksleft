@@ -82,6 +82,11 @@ float ridge(vec2 p, float t) {
 
 float cloud(vec2 p, float s) { return noise(p, s); }
 
+vec2 iPlane(vec2 ro, vec2 rd, vec2 po, vec2 pd) {
+  float d = dot(po - ro, pd) / dot(rd, pd);
+  return d * rd + ro;
+}
+
 void main() {
   vec2 st = (vUv * 2. - 1.) * R.xy;
   vec2 uv = gl_FragCoord.xy / Rpx.xy;
@@ -97,21 +102,32 @@ void main() {
 
   {
     vec2 p = st;
-
-    float dc = 1. - length(p) * 2.;
-    float pdc = pow(dc, 3.5);
-    float t1 = fract(t * .1 + .5);
-    float t2 = fract(t * .1);
-    float lerp = abs((.5 - t1) / .5);
-
     vec2 rd = -normalize(p) * .5;
-    float d = mix(cloud(p + t1 * rd, 7.), cloud(p + t2 * rd, 7.), lerp) * pdc;
 
-    vec3 c1 = hsv(vec3(h, 1, 1)), c2 = hsv(vec3(h, -1, 1));
+    vec2 c = vec2(.25);
+    vec2 nor = normalize(c - (p / 10. + length(p)));
 
-    col = saturate(mix(col, mix(c1, c2, pdc), d));
-    col = mix(col, hsv(vec3(x, 1, 1)) - SMP(y, .001), bt);
+    vec2 pos = iPlane(c * p, rd, c, nor);
+    float dd = 1. / dot(pos, pos);
+    pos = mix(c, pos * sqrt(dd), pow(dd, 2.));
+
+    p += pos;
+
+    {
+      float dc = 1. - length(p) * 2.;
+      float pdc = pow(dc, 3.5);
+      float t1 = fract(t * .1 + .5);
+      float t2 = fract(t * .1);
+      float lerp = abs((.5 - t1) / .5);
+
+      float d = mix(cloud(p + t1 * rd, 7.), cloud(p + t2 * rd, 7.), lerp) * pdc;
+
+      vec3 c1 = hsv(vec3(h, 1, 1)), c2 = hsv(vec3(h, -1, 1));
+
+      col = saturate(mix(col, mix(c1, c2, pdc), d));
+    }
   }
 
+  col = mix(col, hsv(vec3(x, 1, 1)) - SMP(y, .001), bt);
   fragColor = vec4(saturate(col), 1.);
 }
