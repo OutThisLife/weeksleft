@@ -7,8 +7,7 @@
 #define saturate(a) clamp(a, 0., 1.)
 #define S(a, b) step(a, b)
 #define SM(a, b, v) smoothstep(a, b, v)
-#define SMP(v, r) smoothstep(3. / Rpx.y, 0., length(v) - r)
-#define hue(v) (.6 + .6 * cos(6.3 * (v) + vec3(0, 23, 21)))
+#define SMP(v, r) SM(3. / Rpx.y, 0., length(v) - r)
 #define rot(a) mat2(cos(a), -sin(a), sin(a), cos(a))
 
 mat3 yuv2rgb =
