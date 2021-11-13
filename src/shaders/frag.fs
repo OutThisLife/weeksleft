@@ -14,14 +14,15 @@ out vec4 fragColor;
 
 #define R vUvRes
 #define Rpx vResolution
-#define PI 3.1415926538
+#define PI 3.14159265359
 #define TWOPI 6.28318530718
-#define PHI 2.399963229728653
+#define PHI 2.61803398875
+#define TAU 1.618033988749895
 
 #define saturate(a) clamp(a, 0., 1.)
 #define S(a, b) step(a, b)
 #define SM(a, b, v) smoothstep(a, b, v)
-#define SMP(v, r) SM(3. / Rpx.y, 0., length(v) - r)
+#define SME(v, r) SM(0., r / Rpx.x, v)
 #define rot(a) mat2(cos(a), -sin(a), sin(a), cos(a))
 
 // ---------------------------------------------------
@@ -40,25 +41,32 @@ void main() {
   vec2 uv = gl_FragCoord.xy / Rpx.xy;
   vec2 mo = iMouse * R.xy;
 
-  vec3 col;
+  vec3 col = hsv(vec3(.3, 1, .2));
 
-  float t = iTime / 2.;
-  float t0 = fract(t * .5 + .5);
-  float t1 = fract(t * .5);
-  float lerp = abs((.5 - t0) / .5);
+  float t = iTime;
 
   {
+    float t = mod(t, 4.);
+    vec2 gv = fract(st * 5.) - .5;
+    vec2 id = floor(st * 5.);
+
+    float gd = SM(.1, 1., .05 / length(gv));
+    col += gd;
+
     vec2 p = st;
-    vec2 rd = -normalize(p) * .5;
+    vec2 rd = -normalize(p);
+    vec2 c = vec2(.33);
 
-    vec2 p0 = p + t0 * rd, p1 = p + t1 * rd;
+    float d0 = dot(c - p, rd) / dot(p, rd);
+    vec2 pos = c - (d0 * rd + p);
 
-    float d0 = 1. - SMP(p0, .01);
-    float d1 = 1. - SMP(p1, .01);
+    float d = 1. / dot(pos, pos);
 
-    float d = mix(d0, d1, lerp);
+    p = clamp(mix(pos, pos * sqrt(d), d), -4., 4.);
+    p = abs(1. - mod(p, 2.));
+    p = abs(p) / dot(p, p) - .57;
 
-    col = mix(col, hsv(vec3(rd.x - t1, 1, 1)), 1. - d);
+    col = mix(col, vec3(0), 1. - length(p));
   }
 
   fragColor = vec4(saturate(pow(col, vec3(1. / 2.2))), 1.);
