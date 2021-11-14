@@ -43,12 +43,12 @@ vec2 spiral(vec2 p) {
 
 float distort(vec3 p) {
   float r = length(p);
-  float a = atan(p.y, p.x) + TWOPI * SM(.2, 0., r);
+  float a = atan(p.y, p.x) + TWOPI * SM(.5, 0., r);
 
-  vec3 o = r * vec3(cos(a), sin(a), p.z + 1.);
+  vec3 o = r * vec3(cos(a), sin(a), p.z);
   vec3 q = clamp(mix(p, o, 1. / sqrt(dot(p, p))), -1., 1.);
 
-  return SM(0., 1., saturate(q.y * q.x * q.z));
+  return SM(0., 1., abs(q.y * q.x));
 }
 
 // ---------------------------------------------------
@@ -58,7 +58,7 @@ void main() {
   vec2 uv = gl_FragCoord.xy / Rpx.xy;
   vec2 mo = iMouse * R.xy;
 
-  float t = iTime;
+  float t = iTime / 2.;
   float t0 = fract(t * .1 + .5);
   float t1 = fract(t * .1);
   float lerp = abs((.5 - t0) / .5);
@@ -67,24 +67,24 @@ void main() {
   vec3 ndc = vec3(st, 0);
 
   {
-    vec2 p = fract(st * 2.) - .5;
+    vec2 p = fract(st * 3.) - .5;
+    float d = 1. - SM(0., .3, length(p));
 
-    float d = 1. - SM(0., .1, dot(p, p));
-
-    col += d * hsv(vec3(dot(p, p), 1, 1));
+    col += d;
   }
 
   {
-    vec3 lin = normalize(vec3(col.xy, col.z + 1.));
+    vec3 lin = normalize(vec3(col.xy, col.z + .5));
+
     vec3 p = cross(ndc, lin);
-    vec3 rd = -normalize(p / lin);
+    vec3 rd = -normalize(p * lin);
 
     float d0 = distort(p + t0 * rd);
     float d1 = distort(p + t1 * rd);
 
     float d = mix(d0, d1, lerp);
 
-    col = vec3(d);
+    col *= d;
   }
 
   fragColor = vec4(saturate(pow(col, vec3(1. / 2.2))), 1.);
