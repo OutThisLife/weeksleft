@@ -17,6 +17,12 @@ const App: React.FC = () => {
       uniforms: {
         cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
         cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
+        iChannel0: new THREE.Uniform(
+          new THREE.TextureLoader().load('/sample.jpg', t => {
+            t.wrapS = THREE.RepeatWrapping
+            t.wrapT = THREE.RepeatWrapping
+          })
+        ),
         iFrame: new THREE.Uniform(1),
         iMouse: new THREE.Uniform(new THREE.Vector2(1, 1)),
         iResolution: new THREE.Uniform(new THREE.Vector4(1, 1, 1, 2)),
