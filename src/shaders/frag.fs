@@ -69,15 +69,15 @@ void main() {
   vec3 col;
 
   {
-    vec3 p = vec3(st, 0);
+    vec3 p = vec3(st + mo / 15., 0);
     float l = 1. + (length(p) - .1) / .1;
     vec3 rd = -normalize(p) / pow(l, 3.);
 
-    p.xy -= mo;
     p -= p / l * 1.1;
     p += 2. * rd;
 
     p.xy *= mat2(cos(t), sin(t), -sin(t), cos(t));
+    p.xy -= mo / 20.;
     float d = map(p);
     col += d * SM(1., 3., l);
   }
