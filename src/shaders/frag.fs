@@ -41,18 +41,19 @@ float map(vec2 p) {
   float res = 1e3;
 
   {
-    vec2 q = mod(p, .2) - .1;
-    float d = .01 / length(q);
+    vec2 q = mod(p, .1) - .05;
+    float d = .0025 / length(q);
 
     res = min(res, d);
   }
 
   {
     vec2 q = mod(p - .25, .5) - .25;
-    float d = .003 / min(abs(q.x), abs(q.y));
-    d = min(d, .03 / max(abs(q.x) + .02, abs(q.y) + .02));
+    float d = .0005 / min(abs(q.x), abs(q.y));
+    d = min(d, .02 / max(abs(q.x) + .02, abs(q.y) + .02));
+    d *= 2.;
 
-    res = max(res, 2. * d);
+    res = max(res, d);
   }
 
   return saturate(res);
@@ -64,18 +65,18 @@ void main() {
   vec2 mo = iMouse * R.xy;
 
   float t = iTime;
-  float t0 = fract(t * .3 + .5);
-  float t1 = fract(t * .3);
+  float t0 = fract(t * .1 + .5);
+  float t1 = fract(t * .1);
   float lerp = abs((.5 - t0) / .5);
 
   vec3 col;
 
-  vec2 p = st - vec2(sin(t) + R.z, cos(t * 1.25) + sin(t * .5)) * .2;
-  p = st - mo;
-  vec2 rd = -normalize(p);
+  vec2 p = st - mo;
+
   float l = 1. + (length(p) - .1) / .1;
 
-  if (l > .55) {
+  {
+    vec2 rd = -normalize(p);
     vec2 p = st * cos(length(p) * .5);
     p -= p / pow(l, 2.);
 
