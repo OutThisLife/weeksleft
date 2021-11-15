@@ -73,11 +73,13 @@ void main() {
     float l = 1. + (length(p) - .1) / .1;
     vec3 rd = -normalize(p) / pow(l, 3.);
 
+    p.xy -= .1;
     p -= p / l * 1.1;
     p += 2. * rd;
 
+    p.xy *= mat2(cos(t), sin(t), -sin(t), cos(t));
     float d = map(p);
-    col += d * SM(.5, 1., l);
+    col += d * SM(1., 3., l);
   }
 
   fragColor = vec4(saturate(col), 1.);
