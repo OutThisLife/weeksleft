@@ -82,7 +82,7 @@ void main() {
     p *= mat2(cos(t), -sin(t), sin(t), cos(t));
 
     float d = map(p);
-    col += d * hsv(vec3(.8 - floor(p.x) * .5, abs(p.x / p.y), 1));
+    col += d;
   }
 
   fragColor = vec4(saturate(col), 1.);
