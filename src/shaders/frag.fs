@@ -64,9 +64,9 @@ void main() {
   vec2 uv = gl_FragCoord.xy / Rpx.xy;
   vec2 mo = iMouse * R.xy;
 
-  float t = iTime;
-  float t0 = fract(t * .2 + .5);
-  float t1 = fract(t * .2);
+  float t = iTime * .3;
+  float t0 = fract(t + .5);
+  float t1 = fract(t);
   float lerp = abs((.5 - t0) / .5);
 
   vec3 col;
@@ -82,7 +82,7 @@ void main() {
     p *= mat2(cos(t), -sin(t), sin(t), cos(t));
 
     float d = map(p);
-    col += d;
+    col += d * SM(.5, 1., l);
   }
 
   fragColor = vec4(saturate(col), 1.);
