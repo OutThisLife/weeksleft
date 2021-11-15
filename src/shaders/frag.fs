@@ -65,22 +65,24 @@ void main() {
   vec2 mo = iMouse * R.xy;
 
   float t = iTime;
-  float t0 = fract(t * .1 + .5);
-  float t1 = fract(t * .1);
+  float t0 = fract(t * .2 + .5);
+  float t1 = fract(t * .2);
   float lerp = abs((.5 - t0) / .5);
 
   vec3 col;
 
   vec2 p = st - mo;
-
   float l = 1. + (length(p) - .1) / .1;
 
   {
     vec2 rd = -normalize(p);
-    vec2 p = st * cos(length(p) * .5);
+    vec2 p = st - .03;
     p -= p / pow(l, 2.);
+    p += .09 * rd;
+    p *= mat2(cos(t), -sin(t), sin(t), cos(t));
 
-    col += map(p + .08 * rd);
+    float d = map(p);
+    col += d * hsv(vec3(.8 - floor(p.x) * .5, abs(p.x / p.y), 1));
   }
 
   fragColor = vec4(saturate(col), 1.);
