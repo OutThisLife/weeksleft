@@ -46,6 +46,7 @@ const App: React.FC = () => {
 
       if (ref.current) {
         ref.current.uniforms.iMouse.value.copy(new THREE.Vector2(x, y))
+        ref.current.uniforms.iFrame.value = clock.getDelta()
         ref.current.uniforms.iTime.value = clock.getElapsedTime()
 
         ref.current.uniforms.iResolution.value.copy(
