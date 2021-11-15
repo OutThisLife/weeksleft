@@ -71,7 +71,7 @@ void main() {
 
   vec3 col;
 
-  vec2 p = st - mo;
+  vec2 p = st - mo * .25;
   float l = 1. + (length(p) - .1) / .1;
 
   {
