@@ -37,23 +37,20 @@ vec3 hsv(vec3 c) {
 
 // ---------------------------------------------------
 
-float map(vec2 p) {
+float map(vec3 p) {
   float res = 1e3;
 
+  float c = mod(length(p), .1) + .1;
+  vec3 o = vec3(c, c, 1);
+
   {
-    vec2 q = mod(p, .1) - .05;
-    float d = .0025 / length(q);
+    float s = .089;
+    vec3 q = (mod(p - s * .5, s) - s * .5) / s;
+
+    float l = length(q);
+    float d = sqrt(pow(c, 1.)) / (l / (c - .1));
 
     res = min(res, d);
-  }
-
-  {
-    vec2 q = mod(p - .25, .5) - .25;
-    float d = .0005 / min(abs(q.x), abs(q.y));
-    d = min(d, .02 / max(abs(q.x) + .02, abs(q.y) + .02));
-    d *= 2.;
-
-    res = max(res, d);
   }
 
   return saturate(res);
@@ -71,15 +68,13 @@ void main() {
 
   vec3 col;
 
-  vec2 p = st - mo * .25;
-  float l = 1. + (length(p) - .1) / .1;
-
   {
-    vec2 rd = -normalize(p);
-    vec2 p = st - .03;
-    p -= p / pow(l, 2.);
-    p += .09 * rd;
-    p *= mat2(cos(t), -sin(t), sin(t), cos(t));
+    vec3 p = vec3(st, 0);
+    float l = 1. + (length(p) - .1) / .1;
+    vec3 rd = -normalize(p) / pow(l, 3.);
+
+    p -= p / l * 1.1;
+    p += 2. * rd;
 
     float d = map(p);
     col += d * SM(.5, 1., l);
