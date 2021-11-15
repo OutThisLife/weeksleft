@@ -73,7 +73,7 @@ void main() {
     float l = 1. + (length(p) - .1) / .1;
     vec3 rd = -normalize(p) / pow(l, 3.);
 
-    p.xy -= .1;
+    p.xy -= mo;
     p -= p / l * 1.1;
     p += 2. * rd;
 
