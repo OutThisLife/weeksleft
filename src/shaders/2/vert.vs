@@ -29,7 +29,7 @@ out vec3 vRefract[3];
 out float vReflectionFactor;
 
 void main() {
-  float r = .5;
+  float r = .016;
   vec3 rd = normalize((modelMatrix * position).xyz - cameraPosition);
 
   vUv = uv;
@@ -42,7 +42,8 @@ void main() {
   vRefract[0] = refract(rd, vNormal, r);
   vRefract[1] = refract(rd, vNormal, r * 0.99);
   vRefract[2] = refract(rd, vNormal, r * 0.98);
-  vReflectionFactor = saturate(.1 + 2. * pow(1. + dot(rd, vNormal), 4.));
+  vReflectionFactor =
+      saturate(.016 + 2.442 * pow(1. + dot(rd, vNormal), 4.206));
 
   gl_Position = projectionMatrix * modelViewMatrix * position;
 }

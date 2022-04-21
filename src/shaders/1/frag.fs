@@ -43,9 +43,9 @@ float noise(in vec2 p) {
   vec2 f = fract(p);
 
   float a = rand(i);
-  float b = rand(i + vec2(1., 0.));
-  float c = rand(i + vec2(0., 1.));
-  float d = rand(i + vec2(1., 1.));
+  float b = rand(i + vec2(1, 0));
+  float c = rand(i + vec2(0, 1));
+  float d = rand(i + vec2(1));
 
   vec2 u = f * f * (3. - 2. * f);
   return mix(a, b, u.x) + (c - a) * u.y * (1. - u.x) + (d - b) * u.x * u.y;
@@ -64,7 +64,7 @@ void main() {
   {
     vec2 p = vPos.xy;
 
-    p *= rot(noise(p + t)) * .15;
+    p *= (rot(noise(p * 5. + t)) * .18);
 
     float d0 = line(p, .4);
     float d1 = line(p, .1);

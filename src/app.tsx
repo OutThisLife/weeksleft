@@ -1,4 +1,5 @@
 import type { RootState } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import { EffectComposer } from '@react-three/postprocessing'
 import * as React from 'react'
 import * as THREE from 'three'
@@ -25,6 +26,15 @@ function BG() {
 function Sphere() {
   const ref = React.useRef<THREE.CubeCamera>(null)
 
+  const material = React.useMemo(
+    () => ({
+      fragmentShader: sphereFrag,
+      uniforms: { tCube: new THREE.Uniform(new THREE.CubeTexture()) },
+      vertexShader: sphereVert
+    }),
+    []
+  )
+
   const target = React.useMemo(
     () =>
       new THREE.WebGLCubeRenderTarget(512, {
@@ -33,15 +43,6 @@ function Sphere() {
         generateMipmaps: true,
         minFilter: THREE.LinearMipMapLinearFilter
       }),
-    []
-  )
-
-  const material = React.useMemo(
-    () => ({
-      fragmentShader: sphereFrag,
-      uniforms: { tCube: new THREE.Uniform(new THREE.CubeTexture()) },
-      vertexShader: sphereVert
-    }),
     []
   )
 
@@ -65,28 +66,37 @@ function Sphere() {
       <cubeCamera args={[0.1, 10, target]} {...{ ref }} />
 
       <Shader position={[0.6, 0.2, 0]} {...{ material, onFrame }}>
-        <sphereBufferGeometry args={[0.8, 100, 100]} />
+        <sphereBufferGeometry args={[0.5, 100, 100]} />
       </Shader>
     </>
   )
 }
 
-function Post() {
-  return (
-    <EffectComposer>
-      <DotsEffect />
-    </EffectComposer>
-  )
-}
-
 export default function App() {
+  const cam = React.useMemo(() => new THREE.Vector2(), [])
+  const dir = React.useMemo(() => new THREE.Vector2(), [])
+
+  useFrame(({ camera, mouse }) => {
+    dir.subVectors(mouse, cam).multiplyScalar(0.01)
+    cam.addVectors(cam, dir)
+
+    camera.position.x = cam.x * -0.6
+    camera.position.x = cam.y * -0.3
+    camera.lookAt(new THREE.Vector3(0, 0, 0))
+  })
+
   return (
     <React.Suspense key={Math.random()} fallback={null}>
       <color args={[0x000000]} attach="background" />
 
-      <Sphere />
-      <BG />
-      <Post />
+      <group>
+        <Sphere />
+        <BG />
+      </group>
+
+      <EffectComposer>
+        <DotsEffect />
+      </EffectComposer>
     </React.Suspense>
   )
 }
