@@ -1,78 +1,105 @@
-import { OrbitControls } from '@react-three/drei'
+import type { RootState } from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
+import { EffectComposer } from '@react-three/postprocessing'
 import * as React from 'react'
 import * as THREE from 'three'
-import fragmentShader from './shaders/frag.fs'
-import vertexShader from './shaders/vert.vs'
+import { DotsEffect } from './effects'
+import Shader from './shader'
+import bgFrag from './shaders/1/frag.fs'
+import bgVert from './shaders/1/vert.vs'
+import sphereFrag from './shaders/2/frag.fs'
+import sphereVert from './shaders/2/vert.vs'
 
-const App: React.FC = () => {
-  const ref = React.useRef<THREE.RawShaderMaterial>()
+function BG() {
+  const material = React.useMemo(
+    () => ({ fragmentShader: bgFrag, vertexShader: bgVert }),
+    []
+  )
 
-  const props = React.useMemo(
+  return (
+    <Shader {...{ material }}>
+      <sphereBufferGeometry args={[1, 100, 100]} />
+    </Shader>
+  )
+}
+
+function Sphere() {
+  const ref = React.useRef<THREE.CubeCamera>(null)
+
+  const material = React.useMemo(
     () => ({
-      fragmentShader,
-      ref,
-      side: THREE.DoubleSide,
-      transparent: true,
-      uniforms: {
-        cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
-        cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
-        iChannel0: new THREE.Uniform(
-          new THREE.TextureLoader().load('/sample.jpg', t => {
-            t.wrapS = THREE.RepeatWrapping
-            t.wrapT = THREE.RepeatWrapping
-          })
-        ),
-        iFrame: new THREE.Uniform(1),
-        iMouse: new THREE.Uniform(new THREE.Vector2(1, 1)),
-        iResolution: new THREE.Uniform(new THREE.Vector4(1, 1, 1, 2)),
-        iTime: new THREE.Uniform(0)
-      },
-      vertexShader
+      fragmentShader: sphereFrag,
+      uniforms: { tCube: new THREE.Uniform(new THREE.CubeTexture()) },
+      vertexShader: sphereVert
     }),
     []
   )
 
-  useFrame(
-    ({
-      camera,
-      clock,
-      mouse: { x = 0, y = 0 },
-      size: { height, width },
-      viewport: { dpr }
-    }) => {
-      const w = width * dpr
-      const h = height * dpr
-
-      if (ref.current) {
-        ref.current.uniforms.iMouse.value.copy(new THREE.Vector2(x, y))
-        ref.current.uniforms.iFrame.value = clock.getDelta()
-        ref.current.uniforms.iTime.value = clock.getElapsedTime()
-
-        ref.current.uniforms.iResolution.value.copy(
-          new THREE.Vector4(w, h, w / h, dpr)
-        )
-
-        ref.current.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
-        ref.current.uniforms.cameraProjectionMatrixInverse.value.copy(
-          camera.projectionMatrixInverse
-        )
-      }
-    }
+  const target = React.useMemo(
+    () =>
+      new THREE.WebGLCubeRenderTarget(512, {
+        encoding: THREE.sRGBEncoding,
+        format: THREE.RGBAFormat,
+        generateMipmaps: true,
+        minFilter: THREE.LinearMipMapLinearFilter
+      }),
+    []
   )
+
+  const onFrame: FrameCB = ({ el, gl, scene }) => {
+    const cam = ref.current
+
+    if (
+      el?.material instanceof THREE.RawShaderMaterial &&
+      cam instanceof THREE.CubeCamera
+    ) {
+      el.visible = false
+      cam.update(gl, scene)
+      el.visible = true
+
+      el.material.uniforms.tCube.value = cam.renderTarget.texture
+    }
+  }
+
+  return (
+    <>
+      <cubeCamera args={[0.1, 10, target]} {...{ ref }} />
+
+      <Shader position={[0.6, 0.2, 0]} {...{ material, onFrame }}>
+        <sphereBufferGeometry args={[0.5, 100, 100]} />
+      </Shader>
+    </>
+  )
+}
+
+export default function App() {
+  const cam = React.useMemo(() => new THREE.Vector2(), [])
+  const dir = React.useMemo(() => new THREE.Vector2(), [])
+
+  useFrame(({ camera, mouse }) => {
+    dir.subVectors(mouse, cam).multiplyScalar(0.01)
+    cam.addVectors(cam, dir)
+
+    camera.position.x = cam.x * -0.1
+    camera.position.y = cam.y * -0.2
+
+    camera.lookAt(new THREE.Vector3(0, 0, 0))
+  })
 
   return (
     <React.Suspense key={Math.random()} fallback={null}>
-      <OrbitControls enableDamping makeDefault />
+      <color args={[0x000000]} attach="background" />
 
-      <color args={[0x222222]} attach="background" />
+      <group>
+        <Sphere />
+        <BG />
+      </group>
 
-      <mesh frustumCulled={false}>
-        <planeBufferGeometry args={[2, 2]} />
-        <rawShaderMaterial {...props} />
-      </mesh>
+      <EffectComposer>
+        <DotsEffect />
+      </EffectComposer>
     </React.Suspense>
   )
 }
 
-export default App
+export type FrameCB = (e: RootState & { el: THREE.Mesh | null }) => void

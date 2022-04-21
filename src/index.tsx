@@ -8,7 +8,17 @@ import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas camera={{ position: [0, 0, 2] }} dpr={[2, 4]} mode="concurrent">
+    <Canvas
+      camera={{ position: [0, 0, 1] }}
+      dpr={[2, 4]}
+      gl={{
+        alpha: false,
+        antialias: true,
+        depth: false,
+        powerPreference: 'high-performance',
+        stencil: false
+      }}
+    >
       <Stats />
 
       <React.Suspense fallback={null}>

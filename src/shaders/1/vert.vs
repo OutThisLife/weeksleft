@@ -14,15 +14,13 @@ out vec3 vNormal;
 out vec4 vPos;
 out vec3 vUvRes;
 out vec3 vResolution;
-out float vDPR;
 
 void main() {
   vUv = uv;
-  vPos = projectionMatrix * modelViewMatrix * position;
+  vPos = position;
   vNormal = normalMatrix * normal;
   vUvRes = vec3(normalize(iResolution.xy), iResolution.z);
   vResolution = iResolution.xyz;
-  vDPR = iResolution.w;
 
-  gl_Position = position;
+  gl_Position = projectionMatrix * modelViewMatrix * position;
 }
