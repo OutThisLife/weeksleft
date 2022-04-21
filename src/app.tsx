@@ -80,8 +80,9 @@ export default function App() {
     dir.subVectors(mouse, cam).multiplyScalar(0.01)
     cam.addVectors(cam, dir)
 
-    camera.position.x = cam.x * -0.6
-    camera.position.x = cam.y * -0.3
+    camera.position.x = cam.x * -0.1
+    camera.position.y = cam.y * -0.2
+
     camera.lookAt(new THREE.Vector3(0, 0, 0))
   })
 
