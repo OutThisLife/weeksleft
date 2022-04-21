@@ -8,22 +8,14 @@ import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas
-      camera={{ position: [0, 0, 1] }}
-      dpr={[2, 4]}
-      gl={{
-        alpha: false,
-        antialias: true,
-        depth: false,
-        powerPreference: 'high-performance',
-        stencil: false
-      }}
-    >
-      <Stats />
+    <Canvas camera={{ position: [0, 0, 1] }} dpr={[2, 4]}>
+      <color args={[0x000000]} attach="background" />
 
       <React.Suspense fallback={null}>
         <App />
       </React.Suspense>
+
+      <Stats />
     </Canvas>
   </React.StrictMode>,
   document.getElementById('root')

@@ -1,8 +1,11 @@
-import type { MeshProps, RawShaderMaterialProps } from '@react-three/fiber'
+import type {
+  MeshProps,
+  RawShaderMaterialProps,
+  RootState
+} from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
 import * as React from 'react'
 import * as THREE from 'three'
-import type { FrameCB } from './app'
 
 export default function Shader({
   material,
@@ -52,7 +55,7 @@ export default function Shader({
 
   return (
     <mesh frustumCulled={false} {...{ ref, ...props }}>
-      {children || <planeBufferGeometry args={[1, 1]} />}
+      {children || <planeGeometry />}
       <rawShaderMaterial {...args} />
     </mesh>
   )
@@ -62,3 +65,5 @@ interface ShaderProps extends Omit<MeshProps, 'material'> {
   material?: RawShaderMaterialProps
   onFrame?: FrameCB
 }
+
+export type FrameCB = (e: RootState & { el: THREE.Mesh | null }) => void
