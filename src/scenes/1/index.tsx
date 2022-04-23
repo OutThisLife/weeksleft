@@ -1,63 +1,54 @@
-import { useFrame } from '@react-three/fiber'
+import { useAspect } from '@react-three/drei'
 import * as React from 'react'
 import * as THREE from 'three'
-import { Scene } from '~/components'
+import type { FrameCB } from '~/components'
+import { Scene, Shader } from '~/components'
+import fragmentShader from './frag.fs'
+import vertexShader from './vert.vs'
 
-const BG = React.lazy(() => import('./BG'))
-const Sphere = React.lazy(() => import('./Sphere'))
+export default function Index() {
+  const scale = useAspect(1920, 1080)
+  const [st, toggle] = React.useState(() => false)
 
-function Inner() {
-  const ref = React.useRef<THREE.Group>(null)
-
-  const target = React.useMemo(
-    () =>
-      new THREE.WebGLCubeRenderTarget(512, {
-        encoding: THREE.sRGBEncoding,
-        format: THREE.RGBAFormat,
-        generateMipmaps: true,
-        minFilter: THREE.LinearMipMapLinearFilter
-      }),
+  const camera = React.useMemo(
+    () => new THREE.PerspectiveCamera(75, 1, 0.01, 1e3),
     []
   )
 
-  const cube = React.useMemo<THREE.CubeCamera>(
-    () => new THREE.CubeCamera(0.1, 10, target),
-    [target]
+  const material = React.useMemo(
+    () => ({
+      fragmentShader,
+      transparent: true,
+      uniforms: { uProgress: new THREE.Uniform(0) },
+      vertexShader
+    }),
+    []
   )
 
-  useFrame(({ gl, scene }) => {
-    const el = ref.current
+  const onFrame: FrameCB = e => {
+    if (e.el?.material instanceof THREE.RawShaderMaterial) {
+      e.el.material.uniforms.uProgress.value = THREE.MathUtils.lerp(
+        e.el.material.uniforms.uProgress.value,
+        +st,
+        0.1
+      )
 
-    if (el instanceof THREE.Group) {
-      const $s = el.children[1]
-
-      if (
-        $s instanceof THREE.Mesh &&
-        $s.material instanceof THREE.RawShaderMaterial
-      ) {
-        $s.visible = false
-        cube.update(gl, scene)
-        $s.visible = true
-
-        if ($s.material.uniforms.tCube) {
-          $s.material.uniforms.tCube.value = cube.renderTarget.texture
-        }
-      }
+      e.el.material.uniformsNeedUpdate = true
     }
-  })
+  }
 
   return (
-    <group {...{ ref }}>
-      <BG />
-      <Sphere />
-    </group>
-  )
-}
+    <>
+      <Scene position={[0, 0, 1]} {...{ camera, scale }}>
+        <Shader key={Math.random()} {...{ material, onFrame }}>
+          <sphereBufferGeometry args={[1, 100, 100]} />
+        </Shader>
+      </Scene>
 
-export default function Index() {
-  return (
-    <Scene>
-      <Inner />
-    </Scene>
+      <mesh onPointerDown={() => toggle(s => !s)} position={[-1, 1, 2]}>
+        <boxGeometry />
+        <meshNormalMaterial wireframe={st} />
+      </mesh>
+    </>
   )
 }

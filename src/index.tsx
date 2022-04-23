@@ -3,16 +3,22 @@ import { Canvas } from '@react-three/fiber'
 import 'normalize.css'
 import * as React from 'react'
 import { render } from 'react-dom'
+import * as THREE from 'three'
 import App from './app'
 import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas camera={{ position: [0, 0, 1] }} dpr={[2, 4]}>
+    <Canvas
+      camera={{ fov: 90, position: [0, 0, 5] }}
+      dpr={[2, 4]}
+      gl={{ antialias: true, toneMapping: THREE.NoToneMapping }}
+      linear
+    >
       <color args={[0x000000]} attach="background" />
 
       <React.Suspense fallback={null}>
-        <App />
+        <App key={Math.random()} />
       </React.Suspense>
 
       <Stats />

@@ -22,6 +22,7 @@ precision highp float;
 
 uniform vec2 iMouse;
 uniform float iTime;
+uniform float uProgress;
 
 in vec2 vUv;
 in vec3 vUvRes;
@@ -29,6 +30,8 @@ in vec3 vResolution;
 in vec4 vPos;
 
 out vec4 fragColor;
+
+// ---------------------------------------------------
 
 float line(vec2 p, float d) {
   return SM(0., .5 + d * .5, .5 * abs(sin(p.x * 30.) + d * 2.));
@@ -53,6 +56,13 @@ float noise(in vec2 p) {
 
 // ---------------------------------------------------
 
+vec2 distort(vec2 p, float pr, float e) {
+  p = 2. * p - 1.;
+  p /= (1. - pr * length(p) * e);
+
+  return (p + 1.) * .5;
+}
+
 void main() {
   vec2 st = (vUv * 2. - 1.) / R.xy;
   vec2 uv = gl_FragCoord.xy / Rpx.xy;
@@ -60,11 +70,12 @@ void main() {
 
   vec3 col;
   float t = iTime * .5;
+  float pr = uProgress;
 
   {
     vec2 p = vPos.xy;
-
-    p *= (rot(noise(p * 5. + t)) * .18);
+    // p = distort(p, (1. - pr) * -10., pr * 2.);
+    // p *= rot(noise(p * 5. + t)) * .18;
 
     float d0 = line(p, .4);
     float d1 = line(p, .1);
@@ -73,5 +84,12 @@ void main() {
     col = mix(col, #000, d1);
   }
 
-  fragColor = vec4(saturate(col), 1);
+  {
+    vec2 p = vPos.xy;
+    float d = length(p);
+
+    col = mix(vec3(0), vec3(1, 0, 0), 1. - SM(0., pr, SM(0., .5, d)));
+  }
+
+  fragColor = vec4(saturate(col), 1.);
 }

@@ -22,6 +22,7 @@ const init = (
         '@typescript-eslint/explicit-module-boundary-types': 0,
         '@typescript-eslint/no-explicit-any': 0,
         '@typescript-eslint/no-shadow': 1,
+        '@typescript-eslint/no-non-null-assertion': 0,
         'no-shadow': 0,
         'react-hooks/exhaustive-deps': 0,
         'react-hooks/rules-of-hooks': 2,

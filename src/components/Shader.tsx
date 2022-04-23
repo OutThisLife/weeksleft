@@ -17,8 +17,8 @@ export default function Shader({
 
   const args = React.useMemo<RawShaderMaterialProps>(
     () => ({
-      side: THREE.DoubleSide,
       ...material,
+      side: THREE.DoubleSide,
       uniforms: {
         iFrame: new THREE.Uniform(1),
         iMouse: new THREE.Uniform(new THREE.Vector2(1, 1)),
@@ -61,7 +61,7 @@ export default function Shader({
   )
 }
 
-interface ShaderProps extends Omit<MeshProps, 'material'> {
+export interface ShaderProps extends Omit<MeshProps, 'material'> {
   material?: RawShaderMaterialProps
   onFrame?: FrameCB
 }
