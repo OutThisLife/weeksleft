@@ -61,7 +61,7 @@ float fbm(vec2 p, vec4 opts) {
   float t = opts.x, amp = opts.y, s = opts.z, a = opts.w;
   mat2 rot = mat2(s, a, -a, s);
 
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 4; i++) {
     p *= rot;
     t += noise(p) * amp;
     amp *= opts.y;
@@ -87,12 +87,6 @@ void main() {
   float lerp = abs((.5 - t0) / .5);
 
   {
-    vec2 p = st;
-
-    float d = 1. - (S(.1, abs(p.x)) + S(.1, abs(p.y)));
-  }
-
-  {
     vec2 p = st + vec2(0, .5);
     p *= vec2(6, 2);
 
@@ -101,9 +95,7 @@ void main() {
     float d0 = fbm((p - vec2(0, iTime)) * rot(fbm(p) * .0001));
     float d1 = length(p * vec2(1.25 + p.y * 1.5, 1.5));
     float d2 = d0 * max(0., p.y + .75);
-
     float n = pow(max(0., d1 - d2), 1.2);
-
     float d3 = clamp(mix(1. - n, 1. / n, .5), 0., p.y + .75);
 
     float d = saturate(d3 * d0);
