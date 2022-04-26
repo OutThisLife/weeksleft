@@ -15,8 +15,8 @@ export default function Index() {
 
   const material = React.useMemo<RawShaderMaterialProps>(
     () => ({
+      depthTest: false,
       fragmentShader,
-      side: THREE.DoubleSide,
       uniforms: {
         iFrame: new THREE.Uniform(0),
         iMouse: new THREE.Uniform(new THREE.Vector2()),
@@ -53,7 +53,7 @@ export default function Index() {
 
   return (
     <group position={[0, 0, 4]} {...{ scale }}>
-      <mesh key={Math.random()} {...{ ref }}>
+      <mesh key={Math.random()} frustumCulled={false} {...{ ref }}>
         <planeBufferGeometry />
         <rawShaderMaterial {...material} />
       </mesh>
