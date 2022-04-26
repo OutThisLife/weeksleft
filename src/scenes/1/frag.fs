@@ -61,16 +61,29 @@ float fbm(vec2 p, vec4 opts) {
   float t = opts.x, amp = opts.y, s = opts.z, a = opts.w;
   mat2 rot = mat2(s, a, -a, s);
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 6; i++) {
     p *= rot;
-    t += noise(p) * amp;
     amp *= opts.y;
+    t += noise(p) * amp;
   }
 
-  return .5 + .5 * t;
+  return .5 + t * .5;
 }
 
-float fbm(vec2 p) { return fbm(p, vec4(0, .5, 1.6, 1.2)); }
+float fbm(vec2 p) { return fbm(p, vec4(0, .5, 1.2, 1.6)); }
+
+float paint(vec2 p) {
+  float t = 1.;
+
+  p.y *= fbm(p - vec2(0, t));
+  p.x += .5 - fbm(3. * p - vec2(0, t));
+
+  float d = fbm(p);
+  d = S(.25, abs(p.x)) + S(.5, abs(p.y));
+  // d = SM(-.2, .5, d);
+
+  return d;
+}
 
 // ---------------------------------------------------
 
@@ -81,27 +94,17 @@ void main() {
 
   vec3 col;
 
-  float t = iTime * 5.;
+  float t = iTime * .2;
   float t0 = fract(t * .1 + .5);
   float t1 = fract(t * .1);
   float lerp = abs((.5 - t0) / .5);
 
   {
-    vec2 p = st + vec2(0, .5);
-    p *= vec2(6, 2);
+    vec2 p = st * 2.;
 
-    float a = cos(10. * atan(p.y, p.x) + 2. - 4. * dot2(p));
+    float d = paint(p);
 
-    float d0 = fbm((p - vec2(0, iTime)) * rot(fbm(p) * .0001));
-    float d1 = length(p * vec2(1.25 + p.y * 1.5, 1.5));
-    float d2 = d0 * max(0., p.y + .75);
-    float n = pow(max(0., d1 - d2), 1.2);
-    float d3 = clamp(mix(1. - n, 1. / n, .5), 0., p.y + .75);
-
-    float d = saturate(d3 * d0);
-
-    col += vec3(1.5 * d, 1.5 * pow(d, 3.), pow(d, 6.));
-    col = mix(vec3(0), col, d3 * (1. - pow(st.y, 4.)));
+    col += mix(col, vec3(d, pow(d, 4.), pow(d, 6.)), d);
   }
 
   fragColor = vec4(saturate(col), 1);
