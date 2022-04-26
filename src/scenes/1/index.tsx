@@ -1,4 +1,4 @@
-import { useAspect } from '@react-three/drei'
+import { OrbitControls, useAspect } from '@react-three/drei'
 import type { RawShaderMaterialProps } from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
 import * as React from 'react'
@@ -52,11 +52,12 @@ export default function Index() {
   )
 
   return (
-    <group position={[0, 0, 5]} {...{ scale }}>
+    <group position={[0, 0, 4]} {...{ scale }}>
       <mesh key={Math.random()} {...{ ref }}>
         <planeBufferGeometry />
         <rawShaderMaterial {...material} />
       </mesh>
+      <OrbitControls makeDefault />
     </group>
   )
 }
