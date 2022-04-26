@@ -1,4 +1,4 @@
-import { OrbitControls, useAspect } from '@react-three/drei'
+import { useAspect } from '@react-three/drei'
 import type { RawShaderMaterialProps } from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
 import * as React from 'react'
@@ -57,7 +57,6 @@ export default function Index() {
         <planeBufferGeometry />
         <rawShaderMaterial {...material} />
       </mesh>
-      <OrbitControls makeDefault />
     </group>
   )
 }
