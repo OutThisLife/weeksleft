@@ -1,54 +1,62 @@
 import { useAspect } from '@react-three/drei'
+import type { RawShaderMaterialProps } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import * as React from 'react'
 import * as THREE from 'three'
-import type { FrameCB } from '~/components'
-import { Scene, Shader } from '~/components'
 import fragmentShader from './frag.fs'
 import vertexShader from './vert.vs'
 
 export default function Index() {
   const scale = useAspect(1920, 1080)
-  const [st, toggle] = React.useState(() => false)
 
-  const camera = React.useMemo(
-    () => new THREE.PerspectiveCamera(75, 1, 0.01, 1e3),
-    []
-  )
+  const ref = React.useRef<
+    THREE.Mesh<THREE.BufferGeometry, THREE.RawShaderMaterial>
+  >(null!)
 
-  const material = React.useMemo(
+  const material = React.useMemo<RawShaderMaterialProps>(
     () => ({
       fragmentShader,
-      transparent: true,
-      uniforms: { uProgress: new THREE.Uniform(0) },
+      side: THREE.DoubleSide,
+      uniforms: {
+        iFrame: new THREE.Uniform(0),
+        iMouse: new THREE.Uniform(new THREE.Vector2()),
+        iResolution: new THREE.Uniform(new THREE.Vector4()),
+        iTime: new THREE.Uniform(0)
+      },
       vertexShader
     }),
     []
   )
 
-  const onFrame: FrameCB = e => {
-    if (e.el?.material instanceof THREE.RawShaderMaterial) {
-      e.el.material.uniforms.uProgress.value = THREE.MathUtils.lerp(
-        e.el.material.uniforms.uProgress.value,
-        +st,
-        0.1
-      )
+  useFrame(
+    ({
+      clock,
+      mouse: { x = 0, y = 0 },
+      size: { height, width },
+      viewport: { aspect, dpr }
+    }) => {
+      const m = ref.current?.material
 
-      e.el.material.uniformsNeedUpdate = true
+      if (m instanceof THREE.RawShaderMaterial) {
+        const w = width * dpr
+        const h = height * dpr
+
+        m.uniforms.iFrame.value = clock.getDelta()
+        m.uniforms.iMouse.value.copy(new THREE.Vector2(x, y))
+        m.uniforms.iResolution.value.copy(new THREE.Vector4(w, h, aspect, dpr))
+        m.uniforms.iTime.value = clock.getElapsedTime()
+
+        m.uniformsNeedUpdate = true
+      }
     }
-  }
+  )
 
   return (
-    <>
-      <Scene position={[0, 0, 1]} {...{ camera, scale }}>
-        <Shader key={Math.random()} {...{ material, onFrame }}>
-          <sphereBufferGeometry args={[1, 100, 100]} />
-        </Shader>
-      </Scene>
-
-      <mesh onPointerDown={() => toggle(s => !s)} position={[-1, 1, 2]}>
-        <boxGeometry />
-        <meshNormalMaterial wireframe={st} />
+    <group position={[0, 0, 5]} {...{ scale }}>
+      <mesh key={Math.random()} {...{ ref }}>
+        <planeBufferGeometry />
+        <rawShaderMaterial {...material} />
       </mesh>
-    </>
+    </group>
   )
 }

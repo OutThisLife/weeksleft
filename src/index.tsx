@@ -10,13 +10,11 @@ import './index.css'
 render(
   <React.StrictMode>
     <Canvas
-      camera={{ fov: 90, position: [0, 0, 5] }}
+      camera={{ fov: 90, position: [0, 0, 10] }}
       dpr={[2, 4]}
       gl={{ antialias: true, toneMapping: THREE.NoToneMapping }}
       linear
     >
-      <color args={[0x000000]} attach="background" />
-
       <React.Suspense fallback={null}>
         <App key={Math.random()} />
       </React.Suspense>

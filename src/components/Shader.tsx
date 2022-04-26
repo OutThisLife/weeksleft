@@ -63,7 +63,5 @@ export default function Shader({
 
 export interface ShaderProps extends Omit<MeshProps, 'material'> {
   material?: RawShaderMaterialProps
-  onFrame?: FrameCB
+  onFrame?(e: RootState & { el: THREE.Mesh | null }): void
 }
-
-export type FrameCB = (e: RootState & { el: THREE.Mesh | null }) => void
