@@ -25,7 +25,10 @@
     "suppressImplicitAnyIndexErrors": true,
     "target": "esnext",
     "types": ["vite/client"],
-    "typeRoots": ["types"]
+    "typeRoots": ["types"],
+    "paths": {
+      "~/*": ["src/*"]
+    }
   },
   "include": ["src", "types"],
   "exclude": ["node_modules", "dist"]

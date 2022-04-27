@@ -1,11 +1,5 @@
-const test = true
-
-export default (code: string): string => {
-  if (test) {
-    return code
-  }
-
-  return code
+export default (code: string): string =>
+  code
     .replace(
       /\\(?:\r\n|\n\r|\n|\r)|\/\*.*?\*\/|\/\/(?:\\(?:\r\n|\n\r|\n|\r)|[^\n\r])*/g,
       ''
@@ -30,4 +24,3 @@ export default (code: string): string => {
     }, [])
     .join('')
     .replace(/\n+/g, '\n')
-}

@@ -1,78 +1,12 @@
-import { OrbitControls } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
 import * as React from 'react'
-import * as THREE from 'three'
-import fragmentShader from './shaders/frag.fs'
-import vertexShader from './shaders/vert.vs'
+import { Scene1 } from './scenes'
 
-const App: React.FC = () => {
-  const ref = React.useRef<THREE.RawShaderMaterial>()
-
-  const props = React.useMemo(
-    () => ({
-      fragmentShader,
-      ref,
-      side: THREE.DoubleSide,
-      transparent: true,
-      uniforms: {
-        cameraProjectionMatrixInverse: new THREE.Uniform(new THREE.Matrix4()),
-        cameraWorldMatrix: new THREE.Uniform(new THREE.Matrix4()),
-        iChannel0: new THREE.Uniform(
-          new THREE.TextureLoader().load('/sample.jpg', t => {
-            t.wrapS = THREE.RepeatWrapping
-            t.wrapT = THREE.RepeatWrapping
-          })
-        ),
-        iFrame: new THREE.Uniform(1),
-        iMouse: new THREE.Uniform(new THREE.Vector2(1, 1)),
-        iResolution: new THREE.Uniform(new THREE.Vector4(1, 1, 1, 2)),
-        iTime: new THREE.Uniform(0)
-      },
-      vertexShader
-    }),
-    []
-  )
-
-  useFrame(
-    ({
-      camera,
-      clock,
-      mouse: { x = 0, y = 0 },
-      size: { height, width },
-      viewport: { dpr }
-    }) => {
-      const w = width * dpr
-      const h = height * dpr
-
-      if (ref.current) {
-        ref.current.uniforms.iMouse.value.copy(new THREE.Vector2(x, y))
-        ref.current.uniforms.iFrame.value = clock.getDelta()
-        ref.current.uniforms.iTime.value = clock.getElapsedTime()
-
-        ref.current.uniforms.iResolution.value.copy(
-          new THREE.Vector4(w, h, w / h, dpr)
-        )
-
-        ref.current.uniforms.cameraWorldMatrix.value.copy(camera.matrixWorld)
-        ref.current.uniforms.cameraProjectionMatrixInverse.value.copy(
-          camera.projectionMatrixInverse
-        )
-      }
-    }
-  )
-
+export default function App() {
   return (
-    <React.Suspense key={Math.random()} fallback={null}>
-      <OrbitControls enableDamping makeDefault />
+    <>
+      <color args={[0x000000]} attach="background" />
 
-      <color args={[0x222222]} attach="background" />
-
-      <mesh frustumCulled={false}>
-        <planeBufferGeometry args={[2, 2]} />
-        <rawShaderMaterial {...props} />
-      </mesh>
-    </React.Suspense>
+      <Scene1 />
+    </>
   )
 }
-
-export default App
