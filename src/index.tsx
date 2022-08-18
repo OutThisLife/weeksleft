@@ -8,9 +8,9 @@ import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas camera={{ fov: 90, position: [0, 0, 10] }} dpr={[2, 4]} linear>
-      <React.Suspense fallback={null}>
-        <App key={Math.random()} />
+    <Canvas dpr={[2, 4]} linear orthographic>
+      <React.Suspense key={Math.random()} fallback={null}>
+        <App />
       </React.Suspense>
 
       <Stats />

@@ -22,6 +22,8 @@ precision highp float;
 
 uniform vec2 iMouse;
 uniform float iTime;
+uniform sampler2D tex0;
+uniform sampler2D tex1;
 
 in vec2 vUv;
 in vec3 vUvRes;
@@ -32,80 +34,41 @@ out vec4 fragColor;
 
 // ---------------------------------------------------
 
-vec2 hash(vec2 p) {
-  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
-  return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
-}
-
-float noise(in vec2 p) {
-  const float K1 = 0.366025404; // (sqrt(3)-1)/2;
-  const float K2 = 0.211324865; // (3-sqrt(3))/6;
-
-  vec2 i = floor(p + (p.x + p.y) * K1);
-
-  vec2 a = p - i + (i.x + i.y) * K2;
-  vec2 o = (a.x > a.y) ? vec2(1, 0) : vec2(0, 1);
-  vec2 b = a - o + K2;
-  vec2 c = a - 1. + 2. * K2;
-
-  vec3 h = max(0.5 - vec3(dot(a, a), dot(b, b), dot(c, c)), 0.);
-
-  vec3 n =
-      h * h * h * h *
-      vec3(dot(a, hash(i + 0.)), dot(b, hash(i + o)), dot(c, hash(i + 1.0)));
-
-  return dot(n, vec3(70));
-}
-
-float fbm(vec2 p, vec4 opts) {
-  float t = opts.x, amp = opts.y, s = opts.z, a = opts.w;
-  mat2 rot = mat2(s, a, -a, s);
-
-  for (int i = 0; i < 6; i++) {
-    p *= rot;
-    amp *= opts.y;
-    t += noise(p) * amp;
-  }
-
-  return .5 + t * .5;
-}
-
-float fbm(vec2 p) { return fbm(p, vec4(0, .5, 1.2, 1.6)); }
-
-float paint(vec2 p) {
-  float t = 1.;
-
-  p.y *= fbm(p - vec2(0, t));
-  p.x += .5 - fbm(3. * p - vec2(0, t));
-
-  float d = fbm(p);
-  d = S(.25, abs(p.x)) + S(.5, abs(p.y));
-  // d = SM(-.2, .5, d);
-
-  return d;
-}
-
-// ---------------------------------------------------
+float hash(float n) { return fract(sin(n) * 753.5453123); }
 
 void main() {
   vec2 st = (vUv * 2. - 1.) / R.xy;
   vec2 uv = gl_FragCoord.xy / Rpx.xy;
   vec2 mo = iMouse * R.xy;
 
-  vec3 col;
+  vec4 col;
 
-  float t = iTime * .2;
-  float t0 = fract(t * .1 + .5);
-  float t1 = fract(t * .1);
-  float lerp = abs((.5 - t0) / .5);
+  float md = distance(st, mo);
+  float t = iTime;
+  float tt0 = fract(t * .5 + .5);
+  float tt1 = fract(t * .5);
+  float lerp = abs((.5 - tt0) / .5);
 
   {
-    vec2 p = st * 2.;
+    vec2 p = vUv;
+    vec2 q = (p - .5) * vec2(2.5, 1.5);
+    vec2 g = fract(p * vec2(50, 25));
 
-    float d = paint(p);
+    float d0 = SM(-.3, .15, dot(q.y, mo.y));
+    float d1 = .5 + .5 * sin(t);
+    float d2 = 1. - S(.5, max(abs(q.x), abs(q.y)));
 
-    col += mix(col, vec3(d, pow(d, 4.), pow(d, 6.)), d);
+    float d = min(d1, d2);
+    d = min(d0, d2);
+
+    vec2 uv1 = p + rot(PI / 4.) * g * d * .1;
+    vec2 uv2 = (q * d2 + .5) + rot(PI / 4.) * g * (1. - d) * .1;
+
+    vec4 t0 = texture(tex0, uv1);
+    vec4 t1 = texture(tex1, uv2);
+
+    col = mix(t0, t1, d);
   }
 
-  fragColor = vec4(saturate(col), 1);
+  fragColor = saturate(col);
 }
