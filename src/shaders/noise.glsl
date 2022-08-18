@@ -23,20 +23,19 @@ vec2 rhash(vec2 uv) {
   return fract(fract(uv / mys) * uv);
 }
 
-float rand(vec2 st) {
-  return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+float rand(vec2 p) {
+  return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
 float rand(float s) { return rand(vec2(s, dot(s, s))); }
 
 float noise(in vec2 p) {
-  vec2 i = floor(p);
-  vec2 f = fract(p);
+  vec2 i = floor(p), f = fract(p);
 
   float a = rand(i);
-  float b = rand(i + vec2(1., 0.));
-  float c = rand(i + vec2(0., 1.));
-  float d = rand(i + vec2(1., 1.));
+  float b = rand(i + vec2(1, 0));
+  float c = rand(i + vec2(0, 1));
+  float d = rand(i + vec2(1));
 
   vec2 u = f * f * (3. - 2. * f);
   return mix(a, b, u.x) + (c - a) * u.y * (1. - u.x) + (d - b) * u.x * u.y;
@@ -55,17 +54,20 @@ float noise(in vec3 x) {
              f.z);
 }
 
-float fbm(vec2 p, float t, float amplitude, float s, float a) {
-  float mask = length(p), amp = amplitude;
+float fbm(vec2 p, vec4 opts) {
+  float t = opts.x, amp = opts.y, s = opts.z, a = opts.w;
+  mat2 rot = mat2(s, a, -a, s);
 
-  for (int i = 0; i < 4; i++) {
-    p *= R(s, a);
+  for (int i = 0; i < 6; i++) {
+    p *= rot;
     t += noise(p) * amp;
-    amp *= amplitude;
+    amp *= opts.y;
   }
 
-  return t - mask;
+  return .5 + .5 * t;
 }
+
+float fbm(vec2 p) { return fbm(p, vec4(0, .5, 1.6, 1.2)); }
 
 float fbm(vec2 p) { return fbm(p, .5, .5, 1.6, 1.2); }
 

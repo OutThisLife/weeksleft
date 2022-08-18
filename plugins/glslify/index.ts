@@ -35,9 +35,6 @@ export default (): Plugin => ({
 
     const { default: compile } = await import('./compile')
 
-    return {
-      code: await compile(code, id),
-      map: null
-    }
+    return { code: await compile(code, id), map: null }
   }
 })

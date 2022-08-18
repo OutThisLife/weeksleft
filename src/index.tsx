@@ -8,12 +8,12 @@ import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas camera={{ position: [0, 0, 2] }} dpr={[2, 4]} mode="concurrent">
-      <Stats />
-
-      <React.Suspense fallback={null}>
+    <Canvas dpr={[2, 4]} linear orthographic>
+      <React.Suspense key={Math.random()} fallback={null}>
         <App />
       </React.Suspense>
+
+      <Stats />
     </Canvas>
   </React.StrictMode>,
   document.getElementById('root')
