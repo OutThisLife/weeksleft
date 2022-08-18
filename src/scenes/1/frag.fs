@@ -43,18 +43,17 @@ void main() {
 
   vec4 col;
 
-  float md = distance(st, mo);
   float t = iTime;
-  float tt0 = fract(t * .5 + .5);
-  float tt1 = fract(t * .5);
-  float lerp = abs((.5 - tt0) / .5);
+  float t0 = fract(t * .1 + .5);
+  float t1 = fract(t * .1);
+  float lerp = abs((.5 - t0) / .5);
 
   {
     vec2 p = vUv;
     vec2 q = (p - .5) * vec2(2.5, 1.5);
-    vec2 g = fract(p * vec2(50, 25));
+    vec2 g = fract(p * vec2(50, 25)) - .5;
 
-    float d0 = SM(-.3, .15, dot(q.y, mo.y));
+    float d0 = SM(-.2, .1, dot(mo, st));
     float d1 = .5 + .5 * sin(t);
     float d2 = 1. - S(.5, max(abs(q.x), abs(q.y)));
 
