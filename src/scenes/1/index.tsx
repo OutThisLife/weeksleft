@@ -12,7 +12,7 @@ export default function Index() {
 
   const [tex0, tex1] = useLoader(THREE.TextureLoader, [
     '/flowers.jpg',
-    '/dress.jpg'
+    '/flowers2.jpg'
   ])
 
   const material = React.useMemo<RawShaderMaterialProps>(

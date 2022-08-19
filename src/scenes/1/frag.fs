@@ -51,17 +51,18 @@ void main() {
   {
     vec2 p = vUv;
     vec2 q = (p - .5) * vec2(2.5, 1.5);
-    vec2 g = fract(p * vec2(50, 25)) - .5;
+    vec2 g = fract(p * vec2(50, 25));
 
     float d0 = SM(-.2, .1, dot(mo, st));
     float d1 = .5 + .5 * sin(t);
     float d2 = 1. - S(.5, max(abs(q.x), abs(q.y)));
 
     float d = min(d1, d2);
-    d = min(d0, d2);
+    // d = min(d0, d2);
+    d = d1;
 
     vec2 uv1 = p + rot(PI / 4.) * g * d * .1;
-    vec2 uv2 = (q * d2 + .5) + rot(PI / 4.) * g * (1. - d) * .1;
+    vec2 uv2 = p + rot(PI / 4.) * g * (1. - d) * .1;
 
     vec4 t0 = texture(tex0, uv1);
     vec4 t1 = texture(tex1, uv2);
