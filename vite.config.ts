@@ -13,5 +13,8 @@ export default defineConfig({
       '~': resolve(__dirname, 'src')
     }
   },
-  root: resolve(__dirname, 'src')
+  root: resolve(__dirname, 'src'),
+  server: {
+    port: 3e3
+  }
 })

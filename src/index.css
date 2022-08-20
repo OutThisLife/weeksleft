@@ -39,8 +39,9 @@ nav {
   gap: 1em;
   place-content: center;
   place-items: center;
+  position: fixed !important;
   transform: unset !important;
-  inset: auto 0 1rem 0 !important;
+  inset: auto 0 2rem 0 !important;
 }
 
 nav > div {
