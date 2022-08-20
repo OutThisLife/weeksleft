@@ -60,23 +60,27 @@ void main() {
     float d = progress;
     float md = SM(-.5, .5, distance(mo, st));
 
-    // Texture 0 out
-    float d0 = d * dir;
-    vec4 t0 = texture(tex0, p);
-    vec2 p0 = p + rot(PI / 4.) * g * d0 * .1;
+    vec4 t0 = texture(tex0, p), t1 = texture(tex1, p);
 
-    p0 = mix(p0, vec2(p.x + d0 * avg(t0), p.y), md);
-    t0 = texture(tex0, p0);
+    // Texture 0 out
+    {
+      float d = d * dir;
+
+      vec2 q = p + rot(PI / 4.) * g * d * .1;
+      q = mix(q, vec2(p.x + d * avg(t0), p.y), md);
+
+      t0 = texture(tex0, q);
+    }
 
     // Texture 1 in
-    float d1 = (1. - d) * dir;
-    vec4 t1 = texture(tex1, p);
-    vec2 p1 = p + rot(PI / 4.) * g * d1 * .1;
+    {
+      float d = (1. - d) * dir;
 
-    p1 = mix(p1, vec2(p.x - d1 * avg(t1), p.y), md);
-    t1 = texture(tex1, p1);
+      vec2 q = p + rot(PI / 4.) * g * d * .1;
+      q = mix(q, vec2(p.x - d * avg(t1), p.y), md);
 
-    // ------------------------------
+      t1 = texture(tex1, q);
+    }
 
     col = mix(t0, t1, d);
   }
