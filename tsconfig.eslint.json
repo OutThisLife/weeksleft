@@ -5,5 +5,5 @@
     "noEmit": true,
     "esModuleInterop": true
   },
-  "include": ["src", "plugins", "./*.ts"]
+  "include": ["src", "types", "plugins", "./*.ts"]
 }

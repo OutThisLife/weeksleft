@@ -7,13 +7,11 @@ import { useFrame } from '@react-three/fiber'
 import * as React from 'react'
 import * as THREE from 'three'
 
-export default function Shader({
-  material,
-  onFrame = () => void null,
-  children,
-  ...props
-}: ShaderProps) {
-  const ref = React.useRef<THREE.Mesh>(null)
+export default React.forwardRef<THREE.Mesh, ShaderProps>(function Shader(
+  { children, material, onFrame, ...props },
+  outerRef
+) {
+  const ref = React.useRef<THREE.Mesh>(null!)
 
   const args = React.useMemo<RawShaderMaterialProps>(
     () => ({
@@ -50,18 +48,34 @@ export default function Shader({
       m.uniforms.iTime.value = clock.getElapsedTime()
     }
 
-    onFrame({ ...st, el: ref.current })
+    onFrame?.({ ...st, el: ref.current })
   })
 
   return (
-    <mesh frustumCulled={false} {...{ ref, ...props }}>
+    <mesh
+      ref={(e: THREE.Mesh) => {
+        ref.current = e
+
+        if (typeof outerRef === 'function') {
+          outerRef(e)
+        } else if (outerRef) {
+          outerRef.current = e
+        }
+      }}
+      frustumCulled={false}
+      {...props}
+    >
       {children || <planeGeometry />}
       <rawShaderMaterial {...args} />
     </mesh>
   )
-}
+})
 
 export interface ShaderProps extends Omit<MeshProps, 'material'> {
   material?: RawShaderMaterialProps
-  onFrame?(e: RootState & { el: THREE.Mesh | null }): void
+  onFrame?(
+    e: RootState & {
+      el: Maybe<THREE.Mesh>
+    }
+  ): void
 }

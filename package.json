@@ -21,6 +21,7 @@
     "@vitejs/plugin-react": "^2.0.1",
     "glsl-noise": "^0.0.0",
     "glslify": "^7.1.1",
+    "gsap": "^3.11.0",
     "leva": "^0.9.30",
     "normalize.css": "^8.0.1",
     "postprocessing": "^6.28.5",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@types/eslint": "^8.4.5",
+    "@types/gsap": "^3.0.0",
     "@types/node": "^18.7.6",
     "@types/prettier": "^2.7.0",
     "@types/react": "^18.0.17",

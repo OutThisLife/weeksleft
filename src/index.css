@@ -33,3 +33,26 @@ body {
 canvas {
   user-select: none;
 }
+
+nav {
+  display: flex;
+  gap: 1em;
+  place-content: center;
+  place-items: center;
+  transform: unset !important;
+  inset: auto 0 1rem 0 !important;
+}
+
+nav > div {
+  display: contents;
+}
+
+nav img {
+  object-fit: cover;
+  border: 1px solid #fff;
+}
+
+nav a { transition: .3s; }
+nav a:not(.active):not(:hover) {
+  filter: grayscale(1) opacity(.5);
+}
