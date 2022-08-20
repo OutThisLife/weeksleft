@@ -68,6 +68,12 @@ export default function Index() {
     [state]
   )
 
+  React.useEffect(() => {
+    const int = setInterval(() => handle(1), 2e3)
+
+    return () => clearInterval(int)
+  }, [])
+
   return (
     <>
       <Shader
