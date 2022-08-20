@@ -46,11 +46,12 @@ export default function Index() {
       if (!running && m instanceof THREE.RawShaderMaterial) {
         const r = slides.length
         const idx = force ? i : i === 1 ? (cur + 1) % r : (cur - 1 + r) % r
+        const dir = !force ? i : idx < cur ? -1 : 1
 
         update({ idx, running: true })
 
-        m.uniforms.dir.value = force ? (idx < cur ? -1 : 1) : i
         m.uniforms.tex1.value = slides[idx]
+        m.uniforms.dir.value = dir
 
         gsap.to(m.uniforms.progress, {
           duration: 1,
