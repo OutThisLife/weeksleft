@@ -14,8 +14,8 @@ export default function Index() {
   const scale = useAspect(1920, 1080)
 
   const [state, update] = React.useState(() => ({
-    idx: 0,
-    running: false
+    animating: false,
+    idx: 0
   }))
 
   const slides = useLoader(
@@ -40,15 +40,15 @@ export default function Index() {
 
   const handle = React.useCallback(
     (i = 1, force = false) => {
-      const { idx: cur, running } = state
+      const { animating, idx: cur } = state
       const m = ref?.current?.material
 
-      if (!running && m instanceof THREE.RawShaderMaterial) {
+      if (!animating && m instanceof THREE.RawShaderMaterial) {
         const r = slides.length
         const idx = force ? i : i === 1 ? (cur + 1) % r : (cur - 1 + r) % r
         const dir = !force ? i : idx < cur ? -1 : 1
 
-        update({ idx, running: true })
+        update({ animating: true, idx })
 
         m.uniforms.tex1.value = slides[idx]
         m.uniforms.dir.value = dir
@@ -59,7 +59,7 @@ export default function Index() {
             m.uniforms.tex0.value = m.uniforms.tex1.value
             m.uniforms.progress.value = 0
 
-            update(s => ({ ...s, running: false }))
+            update(s => ({ ...s, animating: false }))
           },
           value: 1
         })
