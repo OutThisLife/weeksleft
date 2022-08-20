@@ -81,19 +81,20 @@ export default function Index() {
       <Html as="nav" center>
         {slides.map((i, n) => {
           return (
-            <a
+            <img
               key={`slide-${n}`}
+              alt=""
               className={state.idx === n ? 'active' : ''}
-              href="#!"
+              height={50}
               onPointerDown={e => {
                 e.preventDefault()
                 e.stopPropagation()
 
                 handle(n, true)
               }}
-            >
-              <img alt="" height={25} src={i.source.data.src} width={25} />
-            </a>
+              src={i.source.data.src}
+              width={50}
+            />
           )
         })}
       </Html>

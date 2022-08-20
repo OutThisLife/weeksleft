@@ -49,10 +49,10 @@ nav > div {
 
 nav img {
   object-fit: cover;
-  border: 1px solid #fff;
+  border: 2px solid #fff;
+  transition: .3s;
 }
 
-nav a { transition: .3s; }
-nav a:not(.active):not(:hover) {
+nav img:not(.active):not(:hover) {
   filter: grayscale(1) opacity(.5);
 }
