@@ -73,9 +73,7 @@ export default React.forwardRef<THREE.Mesh, ShaderProps>(function Shader(
 
 export interface ShaderProps extends Omit<MeshProps, 'material'> {
   material?: RawShaderMaterialProps
-  onFrame?(
-    e: RootState & {
-      el: Maybe<THREE.Mesh>
-    }
-  ): void
+  onFrame?: OnFrame
 }
+
+export type OnFrame = (e: RootState & { el: Maybe<THREE.Mesh> }) => void

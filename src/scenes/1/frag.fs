@@ -24,9 +24,6 @@ uniform vec2 iMouse;
 uniform float iTime;
 
 uniform sampler2D tex0;
-uniform sampler2D tex1;
-uniform float progress;
-uniform float dir;
 
 in vec2 vUv;
 in vec3 vUvRes;
@@ -37,7 +34,7 @@ out vec4 fragColor;
 
 // ---------------------------------------------------
 
-float avg(vec4 p) { return (p.r + p.g + p.b) * .07; }
+float avg(vec4 p) { return (p.r + p.g + p.b) / 3.; }
 float avg(vec3 p) { return avg(vec4(p, 1.)); }
 float hash(float n) { return fract(sin(n) * 753.5453123); }
 
@@ -46,7 +43,7 @@ void main() {
   vec2 uv = gl_FragCoord.xy / Rpx.xy;
   vec2 mo = iMouse * R.xy;
 
-  vec4 col;
+  vec4 col = vec4(0, 0, 0, 1);
 
   float t = iTime;
   float t0 = fract(t * .1 + .5);
@@ -54,35 +51,12 @@ void main() {
   float lerp = abs((.5 - t0) / .5);
 
   {
-    vec2 p = vUv;
-    vec2 g = fract(p * vec2(50)) - .5;
+    vec2 p = (st * .5) + .5;
 
-    float d = progress;
-    float md = SM(-.5, .5, distance(mo, st));
+    vec4 t0 = texture(tex0, p);
+    vec4 t1 = texture(tex0, (p - .5) * 1.2 + .5);
 
-    vec4 t0 = texture(tex0, p), t1 = texture(tex1, p);
-
-    // Texture 0 out
-    {
-      float d = d * dir;
-
-      vec2 q = p + rot(PI / 4.) * g * d * .1;
-      q = mix(q, vec2(p.x + d * avg(t0), p.y), md);
-
-      t0 = texture(tex0, q);
-    }
-
-    // Texture 1 in
-    {
-      float d = (1. - d) * dir;
-
-      vec2 q = p + rot(PI / 4.) * g * d * .1;
-      q = mix(q, vec2(p.x - d * avg(t1), p.y), md);
-
-      t1 = texture(tex1, q);
-    }
-
-    col = mix(t0, t1, d);
+    col.rgb = vec3(pow((t0.r - t1.r) * distance(mo, st), dot2(p)), t0.gr);
   }
 
   fragColor = saturate(col);

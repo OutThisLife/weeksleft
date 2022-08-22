@@ -8,7 +8,7 @@ import './index.css'
 
 render(
   <React.StrictMode>
-    <Canvas dpr={[2, 4]} linear orthographic>
+    <Canvas dpr={[2, 4]} onCreated={({ gl }) => gl.setClearColor(0x000000)}>
       <React.Suspense fallback={null}>
         <App />
       </React.Suspense>
