@@ -1,81 +1,100 @@
-/* eslint-disable no-nested-ternary */
-import { useAspect, useFBO } from '@react-three/drei'
-import type { GroupProps, RawShaderMaterialProps } from '@react-three/fiber'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { useFBO } from '@react-three/drei'
+import type { RawShaderMaterialProps } from '@react-three/fiber'
 import { createPortal, useFrame } from '@react-three/fiber'
 import * as React from 'react'
 import * as THREE from 'three'
-import type { OnFrame } from '~/components'
-import { Shader } from '~/components'
 import fragmentShader from './frag.fs'
+import fragmentShader2 from './frag2.fs'
 import vertexShader from './vert.vs'
 
-function Box(props: GroupProps) {
-  const ref = React.useRef<THREE.Group>(null!)
-  const [over, set] = React.useState(() => false)
-
-  useFrame(() => {
-    if (ref.current instanceof THREE.Group) {
-      ref.current.rotation.x += 0.01 * (over ? 0.2 : 1)
-      ref.current.rotation.z -= 0.005 * (over ? 0.2 : 1)
-    }
-  })
-
-  return (
-    <>
-      <pointLight position={[5, 5, 5]} />
-      <ambientLight intensity={0.3} />
-
-      <group
-        onPointerLeave={() => set(false)}
-        onPointerOver={() => set(true)}
-        {...{ ref, ...props }}
-      >
-        <mesh rotation={[Math.PI / 4, Math.PI / 4, 1]}>
-          <boxBufferGeometry />
-          <meshStandardMaterial color="#f00" />
-        </mesh>
-      </group>
-    </>
-  )
-}
-
 export default function Index() {
-  const ref = React.useRef<THREE.Mesh>(null!)
-  const scale = useAspect(1920, 1080)
+  const ref = React.useRef<
+    THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>[]
+  >([]!)
+  // const scale = useAspect(1920, 1080)
 
-  const target = useFBO()
+  const cam = React.useRef<THREE.PerspectiveCamera>(null!)
   const scene = React.useMemo(() => new THREE.Scene(), [])
+
+  const fbo = useFBO()
 
   const material = React.useMemo<RawShaderMaterialProps>(
     () => ({
-      depthTest: false,
       fragmentShader,
-      uniforms: THREE.UniformsUtils.merge([
-        { progress: new THREE.Uniform(0) },
-        { tex0: new THREE.Uniform(new THREE.Texture()) }
-      ]),
+      side: THREE.DoubleSide,
+      transparent: true,
+      uniforms: {
+        iFrame: new THREE.Uniform(1),
+        iMouse: new THREE.Uniform(new THREE.Vector2(1, 1)),
+        iResolution: new THREE.Uniform(new THREE.Vector4(1, 1, 1, 2)),
+        iTime: new THREE.Uniform(0)
+      },
       vertexShader
     }),
     []
   )
 
-  const onFrame = React.useCallback<OnFrame>(({ camera, el, gl }) => {
-    const m = el?.material
+  useFrame(
+    ({
+      clock,
+      gl,
+      mouse: { x = 0, y = 0 },
+      size: { height, width },
+      viewport: { dpr }
+    }) => {
+      const w = width * dpr
+      const h = height * dpr
 
-    if (m instanceof THREE.RawShaderMaterial) {
-      m.uniforms.tex0 = new THREE.Uniform(target.texture)
+      ref.current
+        ?.filter(i => i?.material instanceof THREE.RawShaderMaterial)
+        ?.flatMap(i => i.material as THREE.RawShaderMaterial)
+        .forEach(m => {
+          m.uniforms.iFrame.value = clock.getDelta()
+          m.uniforms.iMouse.value.copy(new THREE.Vector2(x, y))
+          m.uniforms.iResolution.value.copy(new THREE.Vector4(w, h, w / h, dpr))
+          m.uniforms.iTime.value = clock.getElapsedTime()
+
+          if (m.uniforms?.tex0) {
+            m.uniforms.tex0.value = fbo.texture
+          }
+        })
+
+      if (cam.current) {
+        gl.setRenderTarget(fbo)
+        gl.render(scene, cam.current)
+        gl.setRenderTarget(null)
+      }
     }
-
-    gl.setRenderTarget(target)
-    gl.render(scene, camera)
-    gl.setRenderTarget(null)
-  }, [])
+  )
 
   return (
-    <group key={fragmentShader} {...{ scale }}>
-      {createPortal(<Box />, scene)}
+    <group key={Math.random()}>
+      <mesh ref={e => ref.current?.push(e!)}>
+        <planeBufferGeometry args={[1, 1, 25, 25]} />
+        <rawShaderMaterial
+          {...{
+            ...material,
+            uniforms: {
+              ...material.uniforms,
+              tex0: new THREE.Uniform(new THREE.Texture())
+            }
+          }}
+        />
+      </mesh>
 
-      <Shader {...{ material, onFrame, ref }} />
+      {createPortal(
+        <>
+          <perspectiveCamera ref={cam} position={[0, 0, 1]} />
+          <mesh ref={e => ref.current?.push(e!)}>
+            <planeBufferGeometry />
+            <rawShaderMaterial
+              {...{ ...material, fragmentShader: fragmentShader2 }}
+            />
+          </mesh>
+        </>,
+        scene
+      )}
     </group>
   )
 }

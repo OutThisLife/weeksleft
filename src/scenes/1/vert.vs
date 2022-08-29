@@ -3,14 +3,11 @@ precision highp float;
 
 // ---------------------------------------------------
 
-#define saturate(a) clamp(a, 0., 1.)
-
-// ---------------------------------------------------
-
-uniform mat4 projectionMatrix;
+uniform mat3 normalMatrix;
 uniform mat4 modelMatrix;
 uniform mat4 modelViewMatrix;
-uniform mat3 normalMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
 uniform vec3 cameraPosition;
 uniform vec4 iResolution;
 

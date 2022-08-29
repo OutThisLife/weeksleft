@@ -2,16 +2,6 @@
   --vsq: calc((1vw + 1vh) / 2);
 }
 
-::-webkit-scrollbar {
-  width: var(--vsq);
-  height: var(--vsq);
-}
-
-::-webkit-scrollbar-thumb {
-  border: 1px solid #3e3e3e;
-  background: #333;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -22,14 +12,15 @@ body {
   padding: 0;
 }
 
+body {
+  background: #20222b;
+}
+
 #root {
+  user-select: none;
   cursor: crosshair;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
   touch-action: none;
-}
-
-canvas {
-  user-select: none;
 }

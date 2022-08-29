@@ -25,6 +25,7 @@
     "leva": "^0.9.30",
     "normalize.css": "^8.0.1",
     "postprocessing": "^6.28.5",
+    "radash": "^7.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "three": "^0.143.0"

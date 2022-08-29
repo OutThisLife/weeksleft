@@ -34,9 +34,6 @@ out vec4 fragColor;
 
 // ---------------------------------------------------
 
-float avg(vec4 p) { return (p.r + p.g + p.b) * .07; }
-float avg(vec3 p) { return avg(vec4(p, 1.)); }
-
 void main() {
   vec2 st = (vUv * 2. - 1.) / R.xy;
   vec2 uv = gl_FragCoord.xy / Rpx.xy;
@@ -51,15 +48,13 @@ void main() {
 
   {
     vec2 p = vUv;
+    p += sin(p.x * 4. + t * 2.) * .1;
+    p = fract(p * vec2(25, 3)) - .5;
 
     const vec4 colorA = vec4(.912, .191, .652, 1);
-    const vec4 colorB = vec4(1, .777, .3, 1);
-
-    vec4 t0 = texture(tex0, p), t1 = texture(tex0, 1. - p.yx);
-    float d = S(p.x, .5);
+    const vec4 colorB = vec4(1, .777, .052, 1);
 
     col = mix(colorA, colorB, p.y);
-    col += avg(t0 + t1) * mix(t1.rbba, t0, d);
   }
 
   fragColor = saturate(col);
