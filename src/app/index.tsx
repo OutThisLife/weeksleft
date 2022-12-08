@@ -2,17 +2,19 @@
 import { useAspect } from '@react-three/drei'
 import type { RawShaderMaterialProps } from '@react-three/fiber'
 import { useFrame } from '@react-three/fiber'
+import { useControls } from 'leva'
 import * as React from 'react'
 import * as THREE from 'three'
 import fragmentShader from './frag.fs'
 import vertexShader from './vert.vs'
 
 export default function Scene() {
-  const scale = useAspect(1920, 1080)
+  const controls = useControls({
+    seed: { max: 1, min: 0, step: 0.01, value: Math.random() }
+  })
 
-  const ref = React.useRef<
-    THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>
-  >(null!)
+  const scale = useAspect(1920, 1080)
+  const ref = React.useRef<THREE.RawShaderMaterial>(null!)
 
   const material = React.useMemo<RawShaderMaterialProps>(
     () => ({
@@ -45,26 +47,19 @@ export default function Scene() {
       const m = ref.current
 
       if (m instanceof THREE.RawShaderMaterial) {
-        m.uniforms.iFrame.value = clock.getDelta()
-        m.uniforms.iMouse.value.copy(new THREE.Vector2(x, y))
-        m.uniforms.iResolution.value.copy(new THREE.Vector4(w, h, w / h, dpr))
-        m.uniforms.iTime.value = clock.getElapsedTime()
+        m.uniforms.uFrame.value = clock.getDelta()
+        m.uniforms.uMouse.value.copy(new THREE.Vector2(x / dpr, y / dpr))
+        m.uniforms.uResolution.value.copy(new THREE.Vector4(w, h, w / h, dpr))
+        m.uniforms.uTime.value = clock.getElapsedTime()
+        m.uniforms.uSeed.value = controls.seed
       }
     }
   )
 
   return (
-    <mesh {...{ ref, scale }}>
+    <mesh key={Math.random()} {...{ scale }}>
       <planeBufferGeometry />
-      <rawShaderMaterial
-        {...{
-          ...material,
-          uniforms: {
-            ...material.uniforms,
-            tex0: new THREE.Uniform(new THREE.Texture())
-          }
-        }}
-      />
+      <rawShaderMaterial {...{ ref, ...material }} />
     </mesh>
   )
 }
