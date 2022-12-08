@@ -74,8 +74,8 @@ void main() {
     vec2 q = mix(p, saturate(p - d), 1. - d);
     vec3 rd = 1. - normalize((p * rot(uSeed)).xyy);
 
-    d = 11. + sin((vec2(q * rot(rd.y * uSeed)) * vec2(1. - uSeed)).x * 3. *
-                  (.001 + uSeed));
+    d = 11. +
+        sin((vec2(q * rot(uSeed)) * vec2(1. - uSeed)).x * 3. * (.001 + uSeed));
     float r = sin(atan(q.y, q.x) * d - d * t * .2);
 
     col = p.xxy;
