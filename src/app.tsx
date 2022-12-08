@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Scene1 } from './scenes'
+import Scene from './scene'
 
 export default function App() {
-  return <Scene1 key={Math.random()} />
+  return <Scene key={Math.random()} />
 }

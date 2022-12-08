@@ -20,10 +20,9 @@ precision highp float;
 
 // ---------------------------------------------------
 
-uniform vec2 iMouse;
-uniform float iTime;
-
-uniform sampler2D tex0;
+uniform vec2 uMouse;
+uniform float uTime;
+uniform float uSeed;
 
 in vec2 vUv;
 in vec3 vUvRes;
@@ -37,25 +36,20 @@ out vec4 fragColor;
 void main() {
   vec2 st = (vUv * 2. - 1.) / R.xy;
   vec2 uv = gl_FragCoord.xy / Rpx.xy;
-  vec2 mo = iMouse * R.xy;
+  vec2 mo = uMouse * R.xy;
 
-  vec4 col;
+  vec3 col;
 
-  float t = iTime;
+  float t = uTime;
   float t0 = fract(t * .1 + .5);
   float t1 = fract(t * .1);
   float lerp = abs((.5 - t0) / .5);
 
   {
     vec2 p = vUv;
-    p += sin(p.x * 4. + t * 2.) * .1;
-    p = fract(p * vec2(25, 3)) - .5;
 
-    const vec4 colorA = vec4(.912, .191, .652, 1);
-    const vec4 colorB = vec4(1, .777, .052, 1);
-
-    col = mix(colorA, colorB, p.y);
+    col = p.xyy;
   }
 
-  fragColor = saturate(col);
+  fragColor = saturate(vec4(col, 1));
 }
