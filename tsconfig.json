@@ -22,7 +22,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "suppressImplicitAnyIndexErrors": true,
     "target": "esnext",
     "types": ["vite/client"],
     "typeRoots": ["types"],
