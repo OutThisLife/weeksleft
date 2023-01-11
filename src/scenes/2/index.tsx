@@ -29,23 +29,23 @@ export default function Index() {
 
       <group position={[-0.25, 0, 0.2]} rotation={[1.5, 0, 0]}>
         <mesh castShadow position={[-0.12, 0, 0]}>
-          <boxGeometry args={[0.25, 0.33, 1.5]} />
+          <boxGeometry args={[0.2, 0.35, 1.5]} />
           <meshStandardMaterial color="#13171A" />
         </mesh>
 
         <mesh castShadow position={[1.12, 0, 0]}>
-          <boxGeometry args={[0.25, 0.33, 1.5]} />
+          <boxGeometry args={[0.2, 0.35, 1.5]} />
           <meshStandardMaterial color="#13171A" />
         </mesh>
 
         <group rotation={[0, Math.PI / 2, 0]}>
-          <mesh castShadow position={[0.625, 0, 0.5]}>
-            <boxGeometry args={[0.25, 0.33]} />
+          <mesh castShadow position={[0.65, 0, 0.5]}>
+            <boxGeometry args={[0.2, 0.35, 1.1]} />
             <meshStandardMaterial color="#13171A" />
           </mesh>
 
-          <mesh castShadow position={[-0.625, 0, 0.5]}>
-            <boxGeometry args={[0.25, 0.33]} />
+          <mesh castShadow position={[-0.65, 0, 0.5]}>
+            <boxGeometry args={[0.2, 0.35, 1.1]} />
             <meshStandardMaterial color="#13171A" />
           </mesh>
         </group>
