@@ -7,20 +7,12 @@ export default function Index() {
     <>
       <color args={['#EDE8D7']} attach="background" />
 
-      <OrbitControls
-        maxAzimuthAngle={1}
-        maxDistance={6}
-        maxPolarAngle={2.3}
-        minAzimuthAngle={-1}
-        minDistance={3.33}
-        minPolarAngle={0.3}
-      />
       <ambientLight intensity={0.5} />
 
       <directionalLight
         castShadow
         intensity={0.75}
-        position={[10, 10, 17]}
+        position={[10, 10, 15]}
         shadow-mapSize={4096}
       />
 
@@ -55,6 +47,15 @@ export default function Index() {
         <planeGeometry args={[100, 100]} />
         <shadowMaterial color="#000" opacity={0.15} />
       </mesh>
+
+      <OrbitControls
+        maxAzimuthAngle={1}
+        maxDistance={6}
+        maxPolarAngle={2.3}
+        minAzimuthAngle={-1}
+        minDistance={3.33}
+        minPolarAngle={0.3}
+      />
     </>
   )
 }
