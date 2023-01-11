@@ -59,6 +59,7 @@ export default function Index() {
         minPolarAngle={0.3}
         panSpeed={0.2}
         rotateSpeed={0.3}
+        zoomSpeed={0.5}
       />
     </>
   )
