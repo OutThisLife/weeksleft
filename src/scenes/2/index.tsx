@@ -49,12 +49,16 @@ export default function Index() {
       </mesh>
 
       <OrbitControls
+        enableDamping
+        keyPanSpeed={0.2}
         maxAzimuthAngle={1}
         maxDistance={6}
         maxPolarAngle={2.3}
         minAzimuthAngle={-1}
         minDistance={3.33}
         minPolarAngle={0.3}
+        panSpeed={0.2}
+        rotateSpeed={0.3}
       />
     </>
   )
