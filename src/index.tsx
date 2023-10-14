@@ -1,4 +1,4 @@
-import { OrbitControls, Stats } from '@react-three/drei'
+import { Stats } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import 'normalize.css'
 import * as React from 'react'
@@ -11,8 +11,6 @@ createRoot(document.getElementById('root')!).render(
     <Canvas camera={{ position: [0, 0, 1] }}>
       <React.Suspense>
         <App />
-
-        <OrbitControls maxPolarAngle={Math.PI / 2.1} minPolarAngle={0} />
       </React.Suspense>
 
       <Stats />
